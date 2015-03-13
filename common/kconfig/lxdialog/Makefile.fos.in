@@ -1,0 +1,15 @@
+
+LXDIALOG_SRCS := \
+checklist.c \
+inputbox.c \
+lxdialog.c \
+menubox.c \
+msgbox.c \
+textbox.c \
+util.c \
+yesno.c \
+
+$(eval $(call compile_from_srcs, $(LXDIALOG_SRCS), -DCURSES_LOC="<ncurses.h>" -ggdb))
+
+$(CWD_BLD_ROOT)/lxdialog: $(patsubst %.c,$(CWD_BLD_ROOT)/%.o,$(LXDIALOG_SRCS))
+	@$(call colorize,Linking,$@,gcc -o $@ $^ -lcurses)

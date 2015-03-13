@@ -1,0 +1,28 @@
+------------------------------------------------------------
+Ops:
+Name          Count       Time (us)  Avg (cycle/op)
+CREATE        20489           19407            1894
+DESTROY           0               0               0
+ADD_MAP       20297           20091            1979
+RM_MAP        20295           27019            2662
+OPEN          49338           12268             497
+READ              0               0               0
+WRITE             0               0               0
+LSEEK             0               0               0
+CLOSE         49338           12118             491
+DUP               0               0               0
+FSTAT             6               1             362
+DIRENT            0               0               0
+UNLINK        20487           35885            3503
+READLINK          0               0               0
+RMDIR             2               1            1860
+TRUNC        164064           67642             824
+CHMOD             0               0               0
+CHOWN             0               0               0
+RESOLVE       15147            6350             838
+UTIMENS           0               0               0
+SYMLINK           0               0               0
+BLOCKS       192915           22454             232
+FLUSH         49338            5760             233
+------------------------------------------------------------
+TOTAL        601716          228996             761

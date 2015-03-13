@@ -1,0 +1,27 @@
+
+_CFLAGS:= $(G_PVM_OPT_CFLAGS) -I$(fos_bld_root)/include -I$(fos_bld_root)/include/plat/pvm \
+    -I$(fos_bld_root)/include/arch/$(TGT_ARCH) \
+    -I$(fos_bld_root)/include/plat/pvm \
+    -I$(fos_bld_root)/include/basicc \
+    -I$(fos_bld_root)/include/lwip/arch \
+    -I$(fos_bld_root)/include/lwip/lwip \
+    -I$(fos_bld_root)/include/lwip/lwip/ipv4 \
+    -I$(fos_bld_root)/include/basicc/arch/$(TGT_ARCH) \
+    $(FAUX_OPT)
+
+#    -include $(fos_src_root)/libs/lwip_arch/lwipopts.h \
+#    -include $(fos_src_root)/libs/lwip_arch/lwip/cc.h \
+#    -include $(fos_src_root)/libs/lwip_arch/lwip/sys_arch.h \
+#    -include $(fos_src_root)/libs/lwip_arch/lwip/perf.h \
+#    -include $(fos_src_root)/contrib/lwip/src/include/ipv4/lwip/ip_addr.h \
+#    -include $(fos_src_root)/contrib/lwip/src/include/ipv4/lwip/inet.h \
+#    -include $(fos_src_root)/contrib/lwip/src/include/ipv4/lwip/ip.h \
+#    -include $(fos_src_root)/contrib/lwip/src/include/ipv4/lwip/igmp.h \
+#    -include $(fos_src_root)/contrib/lwip/src/include/ipv4/lwip/icmp.h \
+#    -include $(fos_src_root)/contrib/lwip/src/include/ipv4/lwip/ip_frag.h
+
+_SRCS:= lwip-arch.c lwip-net.c
+
+$(call compile_from_srcs, $(_SRCS), $(_CFLAGS), , )
+$(call add_to_global_includes, lwip/arch, include, )
+

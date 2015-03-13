@@ -1,0 +1,6 @@
+
+_LOCAL_SRCS:=api_lib.c  api_msg.c  err.c  netbuf.c  netdb.c  netifapi.c \
+             sockets.c  tcpip.c
+
+$(call compile_from_srcs, $(_LOCAL_SRCS), $(_LWIP_CFLAGS))
+

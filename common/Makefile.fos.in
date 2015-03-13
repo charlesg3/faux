@@ -1,0 +1,8 @@
+
+
+_SUBDIRS:= kconfig
+
+$(call include_makefiles_func, \
+    $(strip $(addsuffix $(strip /Makefile.fos.in), $(_SUBDIRS))))
+
+$(call add_to_global_includes, common, include, )

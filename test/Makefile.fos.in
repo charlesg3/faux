@@ -1,0 +1,7 @@
+TESTS  = latency channel channel_send_receive channel_mixed channel_concurrent channel_shared channel_shared_endpoint
+TESTS += endpoint_create_destroy endpoint_accept_connect
+TESTS += dispatch_send_receive dispatch_concurrent dispatch_reorder dispatch_echo
+TESTS += endpoint_perf
+DISABLED_TESTS = channel_big
+
+$(call faux_build_tests, $(TESTS), $(FAUX_CXXFLAGS))

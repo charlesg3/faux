@@ -1,0 +1,24 @@
+
+
+_LIBS := $(fos_bld_root)/name/libname.a              \
+    $(fos_bld_root)/libs/utilities/libutilities.a    \
+    $(fos_bld_root)/messaging/libdispatch.a          \
+    -lrt
+
+_FS_CXXFLAGS := $(FAUX_CXXFLAGS) -fpermissive -Wno-error
+
+_SRCS := \
+    $(CWD_SRC_ROOT)/server.cpp                         \
+    $(CWD_SRC_ROOT)/buffer_cache.cpp                   \
+    $(CWD_SRC_ROOT)/file.cpp                           \
+    $(CWD_SRC_ROOT)/marshall.cpp
+
+$(call add_to_global_includes, sys/fs, include, )
+
+$(call compile_from_srcs,$(_SRCS),-I$(fos_bld_root)/include $(_FS_CXXFLAGS))
+$(call ar_from_srcs, libfsserver.a, $(_SRCS),,,,)
+
+_SUBDIRS:= lib
+
+$(call include_makefiles_func, \
+    $(strip $(addsuffix $(strip /Makefile.fos.in), $(_SUBDIRS))))

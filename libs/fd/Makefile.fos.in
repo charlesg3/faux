@@ -1,0 +1,14 @@
+
+$(call compile_from_srcs, fd.c,-I$(fos_bld_root)/include -fPIC -ggdb)
+$(call ar_from_srcs, libfd.a, fd.c)
+
+ifeq ($(ARCH),64)
+# 32 bit library
+$(call compile_from_srcs, fd.c,-I$(fos_bld_root)/include -fPIC -ggdb -m32,,,32)
+$(call ar_from_srcs, libfd32.a, fd.c,,,,,32)
+endif
+
+all: $(CWD_BLD_ROOT)/libfd.a
+
+$(call add_to_global_includes, fd, include, )
+

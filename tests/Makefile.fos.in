@@ -1,0 +1,67 @@
+
+_TEST_CXXFLAGS := -I$(fos_bld_root)/include $(FAUX_CXXFLAGS) -DLINUX -std=gnu++0x -lpthread
+_TEST_CFLAGS := -I$(fos_bld_root)/include $(FAUX_CFLAGS) -DLINUX -std=c99 -lpthread
+
+_LIBS += $(fos_bld_root)/libs/utilities/libutilities.a -lpthread
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/t1.cpp,$(_TEST_CXXFLAGS))
+$(call cxxlink_from_srcs,$(CWD_BLD_ROOT)/t1,t1.cpp,$(_LIBS))
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/t2.cpp,$(_TEST_CXXFLAGS))
+$(call cxxlink_from_srcs,$(CWD_BLD_ROOT)/t2,t2.cpp,$(_LIBS))
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/creates.cpp,$(_TEST_CXXFLAGS))
+$(call cxxlink_from_srcs,$(CWD_BLD_ROOT)/creates,creates.cpp,$(_LIBS))
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/writes.cpp,$(_TEST_CXXFLAGS))
+$(call cxxlink_from_srcs,$(CWD_BLD_ROOT)/writes,writes.cpp,$(_LIBS))
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/directories.cpp,$(_TEST_CXXFLAGS))
+$(call cxxlink_from_srcs,$(CWD_BLD_ROOT)/directories,directories.cpp,$(_LIBS))
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/renames.cpp,$(_TEST_CXXFLAGS))
+$(call cxxlink_from_srcs,$(CWD_BLD_ROOT)/renames,renames.cpp,$(_LIBS))
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/manyrmdirs.cpp,$(_TEST_CXXFLAGS))
+$(call cxxlink_from_srcs,$(CWD_BLD_ROOT)/manyrmdirs,manyrmdirs.cpp,$(_LIBS))
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/createdense.cpp,$(_TEST_CXXFLAGS))
+$(call cxxlink_from_srcs,$(CWD_BLD_ROOT)/createdense,createdense.cpp,$(_LIBS))
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/rmsparse.cpp,$(_TEST_CXXFLAGS))
+$(call cxxlink_from_srcs,$(CWD_BLD_ROOT)/rmsparse,rmsparse.cpp,$(_LIBS))
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/createsparse.cpp,$(_TEST_CXXFLAGS))
+$(call cxxlink_from_srcs,$(CWD_BLD_ROOT)/createsparse,createsparse.cpp,$(_LIBS))
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/rmdense.cpp,$(_TEST_CXXFLAGS))
+$(call cxxlink_from_srcs,$(CWD_BLD_ROOT)/rmdense,rmdense.cpp,$(_LIBS))
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/pfind.cpp,$(_TEST_CXXFLAGS))
+$(call cxxlink_from_srcs,$(CWD_BLD_ROOT)/pfind,pfind.cpp,$(_LIBS))
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/signals.cpp,$(_TEST_CXXFLAGS))
+$(call cxxlink_from_srcs,$(CWD_BLD_ROOT)/signals,signals.cpp,$(_LIBS))
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/copy.cpp,$(_TEST_CXXFLAGS))
+$(call cxxlink_from_srcs,$(CWD_BLD_ROOT)/copy,copy.cpp,$(_LIBS))
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/dir_consistency.cpp,$(_TEST_CXXFLAGS))
+$(call cxxlink_from_srcs,$(CWD_BLD_ROOT)/dir_consistency,dir_consistency.cpp,$(_LIBS))
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/multitrunc.cpp,$(_TEST_CXXFLAGS))
+$(call cxxlink_from_srcs,$(CWD_BLD_ROOT)/multitrunc,multitrunc.cpp,$(_LIBS))
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/fsx-linux.c,$(_TEST_CFLAGS))
+
+$(CWD_BLD_ROOT)/fsx: $(CWD_BLD_ROOT)/fsx-linux.o $(_LIBS)
+	$(call cxx_link,,$@,$^)
+
+fsx: $(CWD_BLD_ROOT)/fsx $(PRELOAD_LIBS)
+	$(PRELOAD) $< /
+
+_SUBDIRS:= fsstress mail
+
+$(call include_makefiles_func, \
+    $(strip $(addsuffix $(strip /Makefile.fos.in), $(_SUBDIRS))))
+

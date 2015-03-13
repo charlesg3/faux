@@ -1,0 +1,525 @@
+# Please use the relative names unless absolutely necessary
+# This makes more readable build directives
+# $(fos_src_root) is the relative name for the source root (top)
+# $(fos_bld_root) is the relative name for the build root
+# $(fos_ins_root) is the relative name for the install root
+# $(fos_global_src_root) is the full qualified path name to the source root
+# $(fos_global_bld_root) is the full qualified path name to the build root
+# $(fos_global_ins_root) is the full qualified path name to the install root
+
+# Don't allow the default automatic build rules
+%.o : %.c
+%.o : %.s
+%.o : %.S
+
+ifeq (,$(findstring no_color,$(MODE)))
+ORANGE=\033[33m
+GREEN=\033[32m
+RED=\033[31m
+NORMAL=\033[0m
+else
+export NO_COLOR=1
+endif
+
+ifeq (,$(findstring verbose,$(MODE)))
+
+colorize = printf "$(ORANGE)$(1): $(GREEN)$(2)$(NORMAL)\n" && $(3)
+mkdir = @if test ! -d $(2) ; then $(call colorize,Mkdir,$(2),mkdir $(1) $(2)) ; fi
+ln = @if test ! -e $(2) ; then $(call colorize,Ln,$(2),ln -s `realpath $(1)` $(2)) ; fi
+ar = @$(call colorize,Archiving,$(2),$(AR) $(1) $(2) $(3))
+cc = @$(call colorize,C-Compiling,$(2) $(RED) -> $(GREEN) $(3),$(CC) $(1) -c $(2) -o $(3) $(4))
+cxx = @$(call colorize,CXX-Compiling,$(2) $(RED) -> $(GREEN) $(3),$(CXX) $(1) -c $(2) -o $(3) $(4))
+cxx_link =@$(call colorize,Linking,$(2),$(CXX) $(3) -o $(2) $(1))
+ld = @$(call colorize,Linking,$(3),$(LD) $(1) $(2) -o $(3))
+sed = @$(call colorize,Generating,$(1),sed $(3) $(2) > $(1))
+gzip = @$(call colorize,Gzipping,$(1),gzip -f $(3) -c $(2) > $(1))
+cp = @$(call colorize,Copy,$(2) $(RED) -> $(GREEN) $(1),cp $(2) $(1))
+
+else
+colorize = $(3)
+mkdir = mkdir $(1) $(2)
+ln =  ln -s `realpath $(1)` $(2)
+ar = $(AR) $(1) $(2) $(3) 
+cc = $(CC) $(1) -c $(2) -o $(3) $(4)
+cxx = $(CXX) $(1) -c $(2) -o $(3) $(4)
+cxx_link = $(CXX) $(3) -o $(2) $(1)
+ld = $(LD) $(1) $(2) -o $(3)
+sed = sed $(3) $(2) > $(1)
+gzip = gzip -f $(3) -c $(2) > $(1)
+cp = cp $(2) $(1)
+endif
+
+# Initialize the CWD root
+CWD_SRC_ROOT ?= $(fos_src_root)
+CWD_BLD_ROOT ?= $(fos_bld_root)
+CWD_INS_ROOT ?= $(fos_ins_root)
+
+proj_src_root ?= $(fos_src_root)
+
+# Initialize the directory stack
+CWD_STACK := stack
+CWD_PATH := 
+
+# Functions to add the a local path
+# $(1) - local path
+# $(2) - extra to add to the begining of the path if not absolute
+add_cwd_src_root = \
+  $(strip \
+    $(foreach path, $(1), \
+      $(if $(filter /% $(proj_src_root)/% /% $(fos_bld_root)/% /% $(fos_global_src_root)/% /% $(fos_global_bld_root)/%, $(path)), \
+        $(path), $(CWD_SRC_ROOT)/$(if $(strip $(2)),$(strip $(strip $(2))/$(path)),$(path)))))
+
+# $(1) - local path
+# $(2) - extra to add to the begining of the path if not absolute
+add_cwd_bld_root = \
+  $(strip \
+    $(foreach path, $(1), \
+      $(if $(filter /% $(proj_src_root)/% /% $(fos_bld_root)/% /% $(fos_global_src_root)/% /% $(fos_global_bld_root)/%, $(path)), \
+        $(path), $(CWD_BLD_ROOT)/$(if $(strip $(2)),$(strip $(strip $(2))/$(path)),$(path)))))
+
+# Function to push the directory stack
+define _push_dir_stack_eval_func
+
+# Push the CWD stack.
+#
+CWD_STACK := $$(CWD_STACK).x
+CWD_PATH_$$(CWD_STACK) := $$(CWD_PATH)
+CWD_PATH := $(patsubst $(proj_src_root)%/,%,$(dir $(1)))
+
+# Update variables.
+CWD_SRC_ROOT := $(proj_src_root)$$(CWD_PATH)
+CWD_BLD_ROOT := $(fos_bld_root)$$(CWD_PATH)
+CWD_INS_ROOT := $(fos_ins_root)$$(CWD_PATH)
+
+endef # _push_dir_stack_eval_func
+
+# A function for popping from the directory stack.
+
+define _pop_dir_stack_eval_func
+
+# Pop the CWD stack.
+CWD_PATH := $$(CWD_PATH_$$(CWD_STACK))
+CWD_STACK := $$(basename $$(CWD_STACK))
+
+# Update variables.
+CWD_SRC_ROOT := $(proj_src_root)$$(CWD_PATH)
+CWD_BLD_ROOT := $(fos_bld_root)$$(CWD_PATH)
+CWD_INS_ROOT := $(fos_ins_root)$$(CWD_PATH)
+
+endef # _pop_dir_stack_eval_func
+
+# A function for including a makefile after a push.
+#
+# $(1) - a list of makefiles to be included (relative path names)
+define _include_makefile_eval_func
+
+include  $(1)
+
+endef # _include_makefile_eval_func
+
+# A function for including makefiles. 
+# $(1) - a list of makefiles 
+include_makefiles_func = \
+    $(foreach file, $(call add_cwd_src_root, $(1)), \
+        $(eval $(call _push_dir_stack_eval_func, $(file))) \
+        $(eval $(call _include_makefile_eval_func, $(file))) \
+        $(eval $(call _pop_dir_stack_eval_func, $(file))))
+
+# Takes in a local source files and outputs a .o file
+# $(1) - relative file to be converted
+# $(2) - extra path to be added before the output object
+# $(3) - extra path to be added after the output object
+# FIXME, think about whether CWD_SRC_ROOT and CWD_BLD_ROOT in the patsub
+#   below should be proj_src_root and fos_bld_root
+local_src_to_obj = \
+    $(strip \
+        $(foreach path, $(call add_cwd_bld_root, \
+            $(patsubst $(CWD_SRC_ROOT)/%,$(CWD_BLD_ROOT)/%,$(1)), $(2)), \
+            $(strip $(addsuffix .o, $(addsuffix $(strip $(3)), $(basename $(path)))))))
+
+# $(1) - obj file
+# $(2) - src file
+# $(3) - flags
+# $(4) - dependanceis
+define _compile_simple_eval_func
+
+# make sure we haven't already defined a rule to build this object
+ifeq (,$$(findstring $(1),$(BUILD_OBJECT_LIST)))
+BUILD_OBJECT_LIST += $(1)
+
+$(1:.o=.d): $(2) $(4) $(fos_bld_root)/include/.timestamp
+	@$(call mkdir,-p,$$(@D))
+ifeq (.c,$(suffix $(2)))
+	@$(CC) $$< -MM -MG -MP $(strip $(3)) | sed -e "s@\(.*\)\.o:@$$(@D)/\1.d $$(@D)/\1.o:@" > $$@
+else
+	@$(CXX) $$< -MM -MG -MP $(strip $(3)) | sed -e "s@\(.*\)\.o:@$$(@D)/\1.d $$(@D)/\1.o:@" > $$@
+endif
+
+$(call add_clean,$(1:.o=.d))
+
+# # may want to clean up relative to clean target...clean ends up rebuilding
+# #   depend info.
+# #   DO NOT make this -include.  There is a bug in make which makes this
+# #   silently fail for unknown files
+# #   See bug report http://savannah.gnu.org/bugs/index.php?15110
+# include $(1:.o=.d)
+
+-include $(1:.o=.d)
+
+$(1): $(2) $(4) $(fos_bld_root)/include/.timestamp
+	$(call mkdir,-p,$$(@D))
+ifeq (.c,$(suffix $(2)))
+	$(call cc,-MMD -MP,$$<,$$@,$(strip $(3)))
+else
+	$(call cxx,-MMD -MP,$$<,$$@,$(strip $(3)))
+endif
+
+$(call add_clean,$(1))
+
+endif
+
+endef
+
+# $(1) - obj file
+# $(2) - src file
+# $(3) - flags
+# $(4) - dependancies
+_compile_simple = \
+    $(eval \
+        $(call _compile_simple_eval_func, $(1), $(2), $(3), $(4)))
+
+# takes in files and outputs object files which are dependant on them
+# $(1) - local source files
+# $(2) - compile flags
+# $(3) - dependancies (use of the $(CWD_xxx_ROOT) directives or 
+#          $(fos_xxx_root) values are legal in the dependancies list)
+# $(4) - extra path to be added to the beginning of the build object's path
+# $(5) - extra path to be added to the end of the build object's path
+compile_from_srcs = \
+    $(foreach file, $(1), \
+        $(call _compile_simple, \
+            $(call local_src_to_obj,  $(file), $(4), $(5)), \
+            $(call add_cwd_src_root, $(file)), $(2), $(3)))
+
+# $(1) - output file
+# $(2) - src files
+# $(3) - flags
+# $(4) - dependancies
+define _ar_simple_eval_func
+
+$(1): $(2) $(4)
+	$(call mkdir,-p,$$(@D))
+	$(call ar,rcs$(strip $(3)),$$@,$$^)
+
+$(call add_clean,$(1))
+
+endef
+
+# $(1) - output file
+# $(2) - src files
+# $(3) - flags
+# $(4) - dependancies
+_ar_simple = \
+    $(eval \
+        $(call _ar_simple_eval_func, $(1), $(2), $(3), $(4)))
+
+# takes in source files names and outputs a statically linked archive
+# $(1) - local output file
+# $(2) - local source files
+# $(3) - extra source object files
+# $(4) - extra ar flags
+# $(5) - dependancies (use of the $(CWD_xxx_ROOT) directives or 
+#          $(fos_xxx_root) values are legal in the dependancies list)
+# $(6) - extra path to be added to the beginning of the build object's path
+# $(7) - extra path to be added to the end of the build object's path
+ar_from_srcs = \
+    $(call _ar_simple, \
+        $(call add_cwd_bld_root, $(1), $(6)), \
+        $(call local_src_to_obj, $(2), $(6), $(7)) $(3), \
+        $(4), $(5))
+
+# $(1) - output file
+# $(2) - src files
+# $(3) - flags
+# $(4) - dependancies
+define _link_simple_eval_func
+
+$(1): $(2) $(4)
+	$(call mkdir,-p,$$(@D))
+	$(call ld,$(strip $(3)),$(strip $(2)),$$@)
+
+$(call add_clean,$(1))
+
+endef
+
+# $(1) - output file
+# $(2) - src files
+# $(3) - flags
+# $(4) - dependancies
+_link_simple = \
+    $(eval \
+        $(call _link_simple_eval_func, $(1), $(2), $(3), $(4)))
+
+# takes in source files names and outputs a statically linked archive
+# $(1) - local output file
+# $(2) - local source files
+# $(3) - extra source object files
+# $(4) - extra ld flags
+# $(5) - dependancies (use of the $(CWD_xxx_ROOT) directives or 
+#          $(fos_xxx_root) values are legal in the dependancies list)
+# $(6) - extra path to be added to the beginning of the build object's path
+# $(7) - extra path to be added to the end of the build object's path
+link_from_srcs = \
+    $(call _link_simple, \
+        $(call add_cwd_bld_root, $(1), $(6)), \
+        $(call local_src_to_obj, $(2), $(6), $(7)) $(3), \
+        $(4), $(5))
+
+# $(2) - src files
+# $(1) - output file
+# $(3) - flags
+# $(4) - dependancies
+define _cxxlink_simple_eval_func
+
+$(1): $(2) $(4)
+	$(call mkdir,-p,$$(@D))
+	$(call cxx_link,$(strip $(3)),$$@,$(2) $(4))
+
+$(call add_clean,$(1))
+
+endef
+
+# $(1) - output file
+# $(2) - src files
+# $(3) - flags
+# $(4) - dependancies
+_cxxlink_simple = \
+    $(eval \
+        $(call _cxxlink_simple_eval_func, $(1), $(2), $(3), $(4)))
+
+# takes in source files names and outputs a statically linked archive
+# $(1) - local output file
+# $(2) - local source files
+# $(3) - extra source object files
+# $(4) - extra ar flags
+# $(5) - dependancies (use of the $(CWD_xxx_ROOT) directives or 
+#          $(fos_xxx_root) values are legal in the dependancies list)
+# $(6) - extra path to be added to the beginning of the build object's path
+# $(7) - extra path to be added to the end of the build object's path
+cxxlink_from_srcs = \
+    $(call _cxxlink_simple, \
+        $(call add_cwd_bld_root, $(1), $(6)), \
+        $(call local_src_to_obj, $(2), $(6), $(7)) $(3), \
+        $(4), $(5))
+
+# $(1) - destination inside of include
+# $(2) - directory to add
+# $(3) - dependancies
+define _global_includes_eval_func
+
+$(1).timestamp $(1): $(3)
+	$(call mkdir,-p,$$(@D))
+	$(call ln,$(2),$(1))
+	@touch $(1).timestamp
+
+$(fos_bld_root)/include/.timestamp: $(1).timestamp
+
+$(call add_clean,$(1))
+$(call add_clean,$(1).timestamp)
+
+endef
+
+# $(1) - destination inside of include
+# $(2) - directory to add
+# $(3) - dependancies
+_add_to_global_includes = \
+    $(eval \
+        $(call _global_includes_eval_func, \
+            $(fos_bld_root)/include/$(strip $(1)), \
+            $(strip $(2)), $(3)))
+
+# $(1) - destination inside of include
+# $(2) - local directory
+# $(3) - dependancies (use of the $(CWD_xxx_ROOT) directives or
+#        $(fos_xxx_root) values are legal in the dependancies list)
+add_to_global_includes = \
+    $(call _add_to_global_includes, \
+        $(1), \
+        $(call add_cwd_src_root, $(2)), \
+        $(3))
+
+# $(1) - dest file
+# $(2) - src file
+# $(3) - dependancies
+define _cp_simple_eval_func
+
+$(1): $(2) $(3)
+	$(call mkdir,-p,$$(@D))
+	$(call cp, $$@, $$<)
+
+$(call add_clean,$(1))
+
+endef
+
+# $(1) - dest file
+# $(2) - src file
+# $(3) - dependancies
+_cp_simple = \
+    $(eval \
+        $(call _cp_simple_eval_func, $(1), $(2), $(3)))
+
+# takes in files copies them to the build directory
+# $(1) - local source files
+# $(2) - dependancies (use of the $(CWD_xxx_ROOT) directives or 
+#          $(fos_xxx_root) values are legal in the dependancies list)
+# $(3) - extra path to be added to the beginning of the build path
+cp_from_srcs = \
+    $(foreach file, $(1), \
+        $(call _cp_simple, \
+            $(call add_cwd_bld_root, $(file), $(3)), \
+            $(call add_cwd_src_root, $(file)), $(2)))
+
+# don't use a phoney target here, for some reason the auto makefile depends really 
+#  don't like that.  Just suck it up and make the file
+$(fos_bld_root)/include/.timestamp:
+	@touch $@
+
+$(call add_clean,$(fos_bld_root)/include/.timestamp)
+
+# $(1) - target name to add _timed to the end of
+define create_timed_target
+
+$(strip $(1))_start:
+	@date +%s.%N > $(fos_bld_root)/$(strip $(1)).start
+
+$(strip $(1))_timed: $(strip $(1))_start $(strip $(1))
+	@date +%s.%N > $(fos_bld_root)/$(strip $(1)).end
+	@echo -n $(strip $(1)) took  " "
+	@echo -n `cat $(fos_bld_root)/$(strip $(1)).start` `cat $(fos_bld_root)/$(1).end` | awk '{printf $$$2 - $$$1}'
+	@echo " seconds to run."
+	@rm $(fos_bld_root)/$(strip $(1)).start $(fos_bld_root)/$(strip $(1)).end
+endef
+
+$(eval $(call create_timed_target,all))
+
+$(fos_bld_root)/results:
+	$(call mkdir,-p,$@)
+
+define _create_subprocess_lds
+$(1): $(2)
+	$(call mkdir,-p,$$(@D))
+	$(call sed,$$@,$$<,'s/_app_/__app_$(strip $(3))_/')
+
+$(call add_clean,$(1))
+endef
+
+create_subprocess_lds = $(eval $(call _create_subprocess_lds,$(1),$(2),$(3)))
+
+define _add_copy_target
+$(1): $(2)
+	$(call mkdir,-p,$$(@D))
+	$(call copy,$$@,$$<)
+
+$(call add_clean,$(1))
+endef
+
+add_copy_target = $(eval $(call _add_copy_target,$(1),$(2)))
+
+# $(1) - destination
+# $(2) - source
+# $(3) - dependancies
+define _add_symlink_eval_func
+
+$(1): $(2) $(3)
+	$(call mkdir,-p,$$(@D))
+	$(call ln,$$<,$$@)
+
+$(call add_clean,$(1))
+endef
+
+# $(1) - destination
+# $(2) - source
+# $(3) - dependancies
+_add_symlink = \
+    $(eval \
+        $(call _add_symlink_eval_func, $(strip $(1)), $(strip $(2)), $(3)))
+
+# $(1) - local dest (should be inside build dir)
+# $(2) - local source
+# $(3) - dependancies (use of the $(CWD_xxx_ROOT) directives or
+#        $(fos_xxx_root) values are legal in the dependancies list)
+add_symlink = \
+    $(call _add_symlink, \
+        $(call add_cwd_bld_root, $(1)), \
+        $(call add_cwd_src_root, $(2)), \
+        $(3))
+
+# $(1) - thing to be cleaned
+define _add_clean_eval_func
+
+ifeq (,$$(findstring $(1),$(CLEAN_LIST)))
+CLEAN_LIST += $(1)
+
+.PHONY: $(1).CLEAN
+
+$(1).CLEAN:
+	$(RM) $(strip $(1))
+
+clean: $(1).CLEAN
+endif
+
+endef
+
+_add_clean = \
+    $(eval \
+        $(call _add_clean_eval_func, $(strip $(1))))
+
+# $(1) - local source
+add_clean = \
+    $(call _add_clean, \
+        $(call add_cwd_bld_root, $(1)))
+
+# $(1) - destination
+# $(2) - source
+# $(3) - extra flags
+# $(4) - dependancies
+define _add_gzip_eval_func
+
+$(1): $(2) $(4)
+	$(call mkdir,-p,$$(@D))
+	$(call gzip,$$@,$$<, )
+
+.PHONY: $(1).CLEAN
+
+$(1).CLEAN:
+	$(RM) $(strip $(1))
+
+clean: $(1).CLEAN
+
+endef
+
+# $(1) - destination
+# $(2) - source
+# $(3) - extra flags
+# $(4) - dependancies
+_add_gzip = \
+    $(eval \
+        $(call _add_gzip_eval_func, $(strip $(1)), $(strip $(2)), \
+            $(3), $(4)))
+
+# $(1) - local dest (should be inside build dir)
+# $(2) - local source
+# $(3) - extra flags
+# $(4) - dependancies (use of the $(CWD_xxx_ROOT) directives or
+#        $(fos_xxx_root) values are legal in the dependancies list)
+add_gzip = \
+    $(call _add_gzip, \
+        $(call add_cwd_bld_root, $(1)), \
+        $(call add_cwd_src_root, $(2)), \
+        $(3), $(4))
+### TODO
+# * make top level makefile
+# * add convenience rules for building PVM etc...
+#
+# * http://make.paulandlesley.org/autodep.html
+# * http://www.xs4all.nl/~evbergen/nonrecursive-make.html

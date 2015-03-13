@@ -1,0 +1,12 @@
+
+all: $(CWD_BLD_ROOT)/libsched.a
+
+_LIB_SRCS := lib.cpp
+
+_SCHED_LIB_CFLAGS= \
+			-I$(fos_bld_root)/include -fPIC          \
+			$(FAUX_OPT) -std=gnu++0x \
+			-Wno-strict-aliasing -Wno-vla -Wno-write-strings -I/usr/src/linux/include -I/usr/include/c++/4.8.1/x86_64-unknown-linux-gnu/
+
+$(call compile_from_srcs,$(_LIB_SRCS),$(_SCHED_LIB_CFLAGS) -march=native)
+$(call ar_from_srcs, libsched.a, $(_LIB_SRCS),,,,)

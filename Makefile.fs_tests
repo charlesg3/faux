@@ -1,0 +1,107 @@
+CORE := $(HARE_CONTRIB)/coreutils-8.21/src
+
+ifeq (,$(findstring debug,$(MODE)))
+ifeq (,$(findstring strace,$(MODE)))
+harerun = $(call colorize,$(1),$(2),$(HARE_ENV) $(1) $(2))
+else
+harerun = $(call colorize,$(1),$(2),strace -f -E $(PRELOAD) -E HARE_ROOT=$(HARE_ROOT) -E HARE_CONTRIB=$(HARE_CONTRIB) -E HARE_BUILD=$(HARE_BUILD) $(1) $(2))
+endif
+else
+harerun = $(call colorize,$(1),$(2),cgdb -quiet -x $(HARE_ROOT)/.gdbcmds --args `PATH=$(PATH_) which $(1)` $(2))
+
+.PHONY: $(fos_bld_root)/.gdbfs
+$(fos_bld_root)/.gdbfs:
+	@echo "attach " `ps ax | grep "build/sys/fs/fs" | grep -v grep | awk '{print $$1}'` > $@
+	@echo "c" >> $@
+
+debugfs: $(fos_bld_root)/.gdbfs
+	sudo cgdb $(fos_bld_root)/sys/fs/fs -x $<
+
+# gererate a .gdbcmds file that we can use while debugging
+.PHONY: .gdbcmds
+.gdbcmds:
+	@echo -n "set exec-wrapper env " > $@
+	@echo -n "LD_PRELOAD=$(LIBFAUX):$(LIBVDSO) " >> $@
+	@echo -n "PATH=$(PATH_) " >> $@
+	@echo -n "LD_LIBRARY_PATH=$(LD_PATH) " >> $@
+	@echo -n "HARE_ROOT=$(HARE_ROOT) " >> $@
+	@echo -n "HARE_CONTRIB=$(HARE_CONTRIB) " >> $@
+	@echo -n "PS1=$(PS1) " >> $@
+	@echo "" >> $@
+	@echo "set logging off" >> $@
+	@echo "set logging overwrite on" >> $@
+	@echo "set logging file .hareoutput" >> $@
+	@echo "set logging on" >> $@
+	@echo "set \$$_exitcode = -999" >> $@
+	@echo "set follow-fork-mode child" >> $@
+	@echo "set breakpoint pending on" >> $@
+	@echo "directory $(HARE_CONTRIB)/eglibc-2.15/libio" >> $@
+	@echo "b main" >> $@
+	@echo "r" >> $@
+	@echo "if \$$_exitcode != -999" >> $@
+	@echo "  quit" >> $@
+	@echo "end" >> $@
+endif
+
+# working tests
+ops: make_subdirs subdir_remove subdir_move  redirection pipes truncate symlink move_files append copy_files copy_dirs rmdir chattributes miniconfig
+# following target left as an example for running
+# single programs under hare
+target: $(HARE_DEPS)
+	@$(call harerun,program,args)
+
+clean_mailbench:
+	-@rm /var/run/shm/notify
+
+regress_single: ops make find ls helloworld scripting tar gzip build_make2 many_echo _findmany miniconfig extract
+regress_parallel: regress_single fsstress punzip pfind_dense pfind_sparse writes copy renames creates directories mailbench 
+regress_finish: isempty
+
+regress: regress_single regress_finish
+	@echo
+	@printf "%-52s" "All tests pass."
+	@echo "[  $(GREEN)OK$(NORMAL)  ]"
+
+pregress: clean_mailbench regress_parallel build_linux
+	@echo
+	@printf "%-52s" "All tests pass."
+	@echo "[  $(GREEN)OK$(NORMAL)  ]"
+
+# target will make sure fsstress exists before running the findmany test
+_findmany: $(fos_bld_root)/tests/fsstress/fsstress findmany
+
+$(HARE_CONTRIB)/psearchy/mkdb/pedsort:
+	make -C $(HARE_CONTRIB)/psearchy/mkdb all
+
+$(HARE_CONTRIB)/psearchy/query/qe:
+	make -C $(HARE_CONTRIB)/psearchy/query all
+
+_psearchy: $(HARE_CONTRIB)/psearchy/mkdb/pedsort $(HARE_CONTRIB)/psearchy/query/qe psearchy
+
+
+# generic build rules for scripts in tests/*.sh
+%: $(HARE_ROOT)/tests/%.sh $(HARE_DEPS)
+ifeq (,$(findstring local,$(MODE)))
+	@$(call harerun,bash,$<)
+else
+	@$(call colorize,$(NORMAL)(local)$(ORANGE) bash,$<,HARE_ROOT=$(HARE_ROOT) HARE_CONTRIB=$(HARE_CONTRIB) HARE_BUILD=$(shell realpath $(fos_bld_root)) bash $<)
+endif
+
+# generic build rules for apps in tests/*.cpp
+%: $(fos_bld_root)/tests/% $(HARE_DEPS)
+ifeq (,$(findstring local,$(MODE)))
+	@$(call harerun,bash,$(HARE_ROOT)/tests/exec.sh $(shell realpath $<))
+else
+	@$(call colorize,$(NORMAL)(local)$(ORANGE) bash,$(HARE_ROOT)/tests/exec.sh,HARE_ROOT=$(HARE_ROOT) HARE_CONTRIB=$(HARE_CONTRIB) HARE_BUILD=$(shell realpath $(fos_bld_root)) bash $(HARE_ROOT)/tests/exec.sh $(shell realpath $<))
+endif
+
+
+fsstress: $(fos_bld_root)/tests/fsstress/fsstress $(HARE_DEPS)
+pfind_sparse: $(fos_bld_root)/tests/rmsparse $(fos_bld_root)/tests/createsparse $(fos_bld_root)/tests/pfind  $(HARE_DEPS)
+pfind_dense: $(fos_bld_root)/tests/rmdense $(fos_bld_root)/tests/createdense $(fos_bld_root)/tests/pfind  $(HARE_DEPS)
+rm_sparse: $(fos_bld_root)/tests/rmsparse $(fos_bld_root)/tests/createsparse $(HARE_DEPS)
+rm_dense: $(fos_bld_root)/tests/rmdense $(fos_bld_root)/tests/createdense $(HARE_DEPS)
+
+
+bcl:
+	@$(fos_src_root)/graphs/bcsim.py $(fos_bld_root)/bcl

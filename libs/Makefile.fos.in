@@ -1,0 +1,5 @@
+
+_SUBDIRS:= basicp system fd utilities vdsowrap
+
+$(call include_makefiles_func, \
+    $(strip $(addsuffix $(strip /Makefile.fos.in), $(_SUBDIRS))))

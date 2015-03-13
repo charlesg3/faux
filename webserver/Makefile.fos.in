@@ -1,0 +1,18 @@
+
+all: $(CWD_BLD_ROOT)/webserver 
+
+webserver: $(CWD_BLD_ROOT)/webserver $(fos_bld_root)/libs/basicp/libfaux.so
+	LD_PRELOAD=$(fos_bld_root)/libs/basicp/libfaux.so $<
+
+run_webserver: $(CWD_BLD_ROOT)/webserver $(fos_bld_root)/libs/basicp/libfaux.so
+	LD_PRELOAD=$(fos_bld_root)/libs/basicp/libfaux.so $<
+
+_WEBSERVER_CFLAGS := -I$(fos_bld_root)/include $(_CFLAGS) -DLINUX
+
+_LIBS += $(fos_bld_root)/libs/utilities/libutilities.a
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/webserver.c,$(_WEBSERVER_CFLAGS))
+
+$(CWD_BLD_ROOT)/webserver: $(CWD_BLD_ROOT)/webserver.o $(_LIBS)
+	$(call cxx_link,,$@,$^)
+

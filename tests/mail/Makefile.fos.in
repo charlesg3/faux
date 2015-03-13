@@ -1,0 +1,24 @@
+
+_TEST_CXXFLAGS := -I$(fos_bld_root)/include $(FAUX_CXXFLAGS) -DLINUX -std=gnu++0x -lpthread
+_TEST_CFLAGS := -I$(fos_bld_root)/include $(FAUX_CFLAGS) -DLINUX -std=c99 -lpthread
+
+_LIBS += $(fos_bld_root)/libs/utilities/libutilities.a $(fos_bld_root)/tests/mail/libutil/libutil.a -lpthread 
+
+_MAIL_CXXFLAGS := -D HW_swarm -I$(CWD_SRC_ROOT)/libutil/include -I$(CWD_SRC_ROOT)/xv6 -include param.h -include compiler.h -Wno-permissive
+
+_LIBUTIL_SRCS := libutil/libutil.cpp libutil/shutil.cpp
+$(call compile_from_srcs, $(_LIBUTIL_SRCS),$(_TEST_CXXFLAGS) $(_MAIL_CXXFLAGS) -m32)
+$(call ar_from_srcs, libutil/libutil.a, $(_LIBUTIL_SRCS))
+
+_MAIL_SRCS := bench.cpp qman.cpp deliver.cpp enqueue.cpp
+$(call compile_from_srcs,$(_MAIL_SRCS),$(_TEST_CXXFLAGS) $(_MAIL_CXXFLAGS))
+$(call cxxlink_from_srcs,bench,bench.cpp enqueue.cpp,$(_LIBS))
+#$(call cxxlink_from_srcs,mail-enqueue,enqueue.cpp,$(_LIBS))
+$(call cxxlink_from_srcs,mail-qman,qman.cpp deliver.cpp,$(_LIBS))
+
+#manymail: $(fos_bld_root)/tests/mail/bench $(fos_bld_root)/tests/mail/mail-enqueue $(fos_bld_root)/tests/mail/mail-deliver  $(fos_bld_root)/tests/mail/mail-qman
+#mailbench: $(fos_bld_root)/tests/mail/bench $(fos_bld_root)/tests/mail/mail-enqueue $(fos_bld_root)/tests/mail/mail-deliver  $(fos_bld_root)/tests/mail/mail-qman
+
+manymail: $(fos_bld_root)/tests/mail/bench   $(fos_bld_root)/tests/mail/mail-deliver  $(fos_bld_root)/tests/mail/mail-qman
+mailbench: $(fos_bld_root)/tests/mail/bench  $(fos_bld_root)/tests/mail/mail-deliver  $(fos_bld_root)/tests/mail/mail-qman
+

@@ -1,0 +1,51 @@
+all: $(CWD_BLD_ROOT)/nameserver $(CWD_BLD_ROOT)/libname.a
+
+nameserver: $(fos_bld_root)/name/nameserver
+	@./$^
+
+nameserver_test: $(fos_bld_root)/name/test
+	@./$^
+
+nameserver_fork_test: $(fos_bld_root)/name/fork_test
+	@./$^
+
+nameserver_perf: $(fos_bld_root)/name/perf
+	@./$^
+
+_LIBS := $(fos_bld_root)/messaging/libdispatch.a \
+         $(fos_bld_root)/libs/utilities/libutilities.a \
+	-lrt -lpthread
+
+$(call compile_from_srcs, $(CWD_SRC_ROOT)/nameserver.cpp, $(FAUX_CXXFLAGS))
+
+$(CWD_BLD_ROOT)/nameserver: $(fos_bld_root)/name/nameserver.o $(_LIBS)
+	$(call cxx_link,,$@,$^)
+
+# native lib
+$(call compile_from_srcs, name.cpp, $(FAUX_CXXFLAGS))
+$(call ar_from_srcs, libname.a, name.cpp)
+
+ifeq ($(ARCH),64)
+# 32 bit library
+$(call compile_from_srcs, name.cpp, $(FAUX_CXXFLAGS) -m32,,,32)
+$(call ar_from_srcs, libname32.a, name.cpp,,,,,32)
+endif
+
+# tests
+
+_TEST_LIBS := $(fos_bld_root)/name/libname.a $(_LIBS)
+
+$(call compile_from_srcs, $(CWD_SRC_ROOT)/test.cpp $(CWD_SRC_ROOT)/fork_test.cpp, $(FAUX_CXXFLAGS))
+
+$(CWD_BLD_ROOT)/test: $(fos_bld_root)/name/test.o $(_TEST_LIBS)
+	$(call cxx_link,,$@,$^)
+
+$(CWD_BLD_ROOT)/fork_test: $(fos_bld_root)/name/fork_test.o $(_TEST_LIBS)
+	$(call cxx_link,,$@,$^)
+
+$(call compile_from_srcs, $(CWD_SRC_ROOT)/perf.cpp, $(FAUX_CXXFLAGS))
+
+$(CWD_BLD_ROOT)/perf: $(fos_bld_root)/name/perf.o $(_TEST_LIBS)
+	$(call cxx_link,,$@,$^)
+
+$(call add_to_global_includes, name, include, )

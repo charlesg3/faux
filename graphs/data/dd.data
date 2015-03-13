@@ -1,0 +1,16 @@
+test             "no dir-distribution"       "dir-distribution"
+mailbench         2.22              1.23
+fsstress          0.714             0.739
+psearchy          1.746             1.543
+punzip            0.604             0.590
+"build linux"     5.4785            5.8657
+"pfind (dense)"   0.60              0.24
+"pfind (sparse)"  8.47              6.65
+"rm (dense)"      1.10              0.73
+"rm (sparse)"     0.34              0.63
+writes            0.436             0.352
+copy              0.507             0.493
+renames           1.814             0.913
+creates           1.022             0.531
+directories       5.601             4.457
+

@@ -1,0 +1,85 @@
+
+apps=creates writes directories renames pfind_sparse pfind_dense punzip fsstress mailbench build_linux
+#filesize_apps=copy
+others=bc sg dc dd ca ops overhead scale
+
+$(CWD_BLD_ROOT):
+	@$(call mkdir,-p,$@)
+
+# generic conversion rules
+$(CWD_BLD_ROOT)/%.svg: $(CWD_BLD_ROOT)/%.plot $(CWD_BLD_ROOT)/%.data
+	gnuplot $<
+
+$(CWD_BLD_ROOT)/%.eps: $(CWD_BLD_ROOT)/%.plot $(CWD_BLD_ROOT)/%.data
+	gnuplot $<
+
+$(CWD_BLD_ROOT)/%.png: $(CWD_BLD_ROOT)/%.eps
+	convert -geometry 1024x768 -density 1024 -background white -alpha background -background white -flatten $< $@
+
+# highlevel composit targets
+graphs: $(CWD_BLD_ROOT) $(addprefix $(CWD_BLD_ROOT)/,$(patsubst %,%.svg,$(apps) $(filesize_apps) $(others)))
+
+graphs_install: $(CWD_SRC_ROOT)/install.sh graphs
+	@$(call colorize,$<,$(apps) $(filesize_apps) $(others),HARE_ROOT=$(HARE_ROOT) HARE_CONTRIB=$(HARE_CONTRIB) HARE_BUILD=$(shell realpath $(fos_bld_root)) HARE_INSTALL=$(HARE_INSTALL) $< "$(apps) $(filesize_apps) $(others)")
+
+# rules for generating core-count graphs
+define gen_plotrules
+$(CWD_BLD_ROOT)/$(1).ops.data: $(CWD_SRC_ROOT)/run_stats.sh
+	$(CWD_SRC_ROOT)/run_stats.sh $(CWD_BLD_ROOT) $(1)
+
+$(CWD_BLD_ROOT)/$(1).data: $(CWD_SRC_ROOT)/run.sh $(CWD_SRC_ROOT)/conf/$1.conf
+	$(CWD_SRC_ROOT)/run.sh $(CWD_BLD_ROOT) $(1)
+
+$(CWD_BLD_ROOT)/$(1).plot: $(CWD_SRC_ROOT)/gen_plotfile.sh
+	$(CWD_SRC_ROOT)/gen_plotfile.sh $(CWD_BLD_ROOT) $(1)
+endef
+
+$(foreach app,$(apps),$(eval $(call gen_plotrules,$(app))))
+
+# rules for generating filesize graphs
+define gen_plotrules_filesize
+$(CWD_BLD_ROOT)/$(1).data: $(CWD_SRC_ROOT)/run_filesize.sh $(CWD_SRC_ROOT)/conf/$(1).conf
+	$(CWD_SRC_ROOT)/run_filesize.sh $(CWD_BLD_ROOT) $(1)
+
+$(CWD_BLD_ROOT)/$(1).plot: $(CWD_SRC_ROOT)/gen_plotfile_filesize.sh
+	$(CWD_SRC_ROOT)/gen_plotfile_filesize.sh $(CWD_BLD_ROOT) $(1)
+endef
+
+$(foreach app,$(filesize_apps),$(eval $(call gen_plotrules_filesize,$(app))))
+
+
+define auto_plot
+$(CWD_BLD_ROOT)/$(1).svg: $(CWD_SRC_ROOT)/plot/$(1).plot $(CWD_BLD_ROOT)/$(1).data
+	gnuplot < $$<
+endef
+
+$(foreach app,$(others),$(eval $(call auto_plot,$(app))))
+
+define overhead_plot
+$(CWD_BLD_ROOT)/overhead.data:
+	$(CWD_SRC_ROOT)/overhead.sh
+endef
+$(eval $(call overhead_plot))
+
+
+define techniques_plot
+$(CWD_BLD_ROOT)/sg.data:
+	$(CWD_SRC_ROOT)/techniques.sh SCATTER_GATHER
+
+$(CWD_BLD_ROOT)/ca.data:
+	$(CWD_SRC_ROOT)/techniques.sh CREATION_AFFINITY
+
+$(CWD_BLD_ROOT)/bc.data:
+	$(CWD_SRC_ROOT)/techniques.sh BUFFER_CACHE
+
+$(CWD_BLD_ROOT)/dc.data:
+	$(CWD_SRC_ROOT)/techniques.sh DIRECTORY_CACHE
+
+$(CWD_BLD_ROOT)/dd.data:
+	$(CWD_SRC_ROOT)/techniques.sh DIRECTORY_DISTRIBUTION
+
+$(CWD_BLD_ROOT)/scale.data:
+	$(CWD_SRC_ROOT)/scale.sh
+endef
+$(eval $(call techniques_plot))
+

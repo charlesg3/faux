@@ -1,0 +1,22 @@
+
+all: $(CWD_BLD_ROOT)/echo_server $(CWD_BLD_ROOT)/echo_client
+
+$(call compile_from_srcs,\
+	$(CWD_SRC_ROOT)/echo-server.cpp, $(FAUX_CFLAGS) $(FAUX_OPT))
+
+$(CWD_BLD_ROOT)/echo_server: $(CWD_BLD_ROOT)/echo-server.o $(_LIBS)
+	$(call cxx_link,,$@,$^)
+
+
+_ECHO_CLIENT_CFLAGS := -I$(fos_bld_root)/include $(FAUX_CFLAGS) -DLINUX -std=gnu++0x -lpthread
+
+_LIBS += $(fos_bld_root)/libs/utilities/libutilities.a -lpthread
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/echo-client.cpp,$(_ECHO_CLIENT_CFLAGS))
+
+$(CWD_BLD_ROOT)/echo_client: $(CWD_BLD_ROOT)/echo-client.o $(_LIBS)
+	$(call cxx_link,,$@,$^)
+
+run_echo_client: $(CWD_BLD_ROOT)/echo_client $(fos_bld_root)/libs/basicp/libfaux.so
+	LD_PRELOAD=$(fos_bld_root)/libs/basicp/libfaux.so $< 127.0.0.1 1234 2
+

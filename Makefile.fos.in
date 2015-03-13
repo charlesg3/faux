@@ -1,0 +1,13 @@
+all:
+
+include $(fos_src_root)/common/makefiles/Makefile.include
+include $(fos_src_root)/common/makefiles/Makefile.faux
+
+_SUBDIRS:=common sys example name \
+	messaging test libs coreserv tests \
+	graphs
+
+
+$(call include_makefiles_func, \
+    $(strip $(addsuffix $(strip /Makefile.fos.in), $(_SUBDIRS))))
+

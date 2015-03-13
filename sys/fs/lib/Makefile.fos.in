@@ -1,0 +1,20 @@
+
+all: $(CWD_BLD_ROOT)/libfs.a
+
+_LIB_SRCS := file_wrapper.cpp pipe.cpp file.cpp dir.cpp \
+	lib.cpp misc.cpp buffer_cache.cpp dir_cache.cpp local_ops.cpp buffer_cache_log.cpp
+
+_FS_LIB_CFLAGS= \
+			-I$(fos_bld_root)/include -fPIC          \
+			$(FAUX_OPT) -std=gnu++0x \
+			-Wno-strict-aliasing -Wno-vla -Wno-write-strings
+
+$(call compile_from_srcs,$(_LIB_SRCS),$(_FS_LIB_CFLAGS) -march=native)
+$(call ar_from_srcs, libfs.a, $(_LIB_SRCS),,,,)
+
+ifeq ($(ARCH),64)
+# 32 bit version
+all: $(CWD_BLD_ROOT)/libfs32.a
+$(call compile_from_srcs,$(_LIB_SRCS),$(_FS_LIB_CFLAGS) -m32,,,32)
+$(call ar_from_srcs, libfs32.a, $(_LIB_SRCS),,,,,32)
+endif

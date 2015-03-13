@@ -1,0 +1,10 @@
+If you are compiling on Linux 3.0, you cannot use ixgbe as it
+has been ported to 3.2.
+
+If you are compiling on Linux 3.2, you cannot use any driver other 
+than ixgbe.
+
+You must change your net/Makefile to reflect what modules you want to build 
+(e1000 only on 3.0, ixgbe only on 3.2).
+
+Currently only the e1000 driver on Linux 3.0 is working.

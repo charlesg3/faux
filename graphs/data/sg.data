@@ -1,0 +1,16 @@
+test                   "no broadcast"   "broadcast"
+mailbench              2.86             2.876
+fsstress               0.769            0.761
+psearchy               1.731            1.714
+punzip                 10.89            10.85
+"build linux"          5.9415           5.8481
+"pfind (dense)"        0.34             0.23
+"pfind (sparse)"       7.27             6.62
+"rm (dense)"           0.74             0.74
+"rm (sparse)"          3.25             2.82
+writes                 2.989            2.981
+copy                   0.398            0.400
+renames                1.323            1.321
+creates                6.161            6.181
+directories            6.557            4.500
+

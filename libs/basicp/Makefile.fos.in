@@ -1,0 +1,37 @@
+all: $(CWD_BLD_ROOT)/libfaux.so
+
+_SRCS := $(wildcard $(CWD_SRC_ROOT)/*.c)
+
+_OBJS := $(patsubst $(CWD_SRC_ROOT)/%.c,$(CWD_BLD_ROOT)/%.o,$(_SRCS))
+_OBJS_LIBS := \
+	$(fos_bld_root)/sys/fs/lib/libfs.a \
+	$(fos_bld_root)/sys/sched/lib/libsched.a \
+	$(fos_bld_root)/libs/fd/libfd.a \
+	$(fos_bld_root)/libs/utilities/libutilities.a \
+	$(fos_bld_root)/name/libname.a \
+	$(fos_bld_root)/messaging/libdispatch.a \
+	-lrt -ldl
+
+$(CWD_BLD_ROOT)/libfaux.so: $(_OBJS) $(_OBJS_LIBS)
+	@printf "$(ORANGE)Creating SO: $(GREEN)$@$(NORMAL)\n" && g++ -shared -Wl\,-soname,$@ -o $@  $^
+
+$(call compile_from_srcs,$(_SRCS), $(FAUX_CFLAGS))
+
+# build 32 bit versions if we're 64bit build
+ifeq ($(ARCH),64)
+all: $(CWD_BLD_ROOT)/libfaux.so
+
+$(call compile_from_srcs,$(_SRCS), $(FAUX_CFLAGS) -m32 -DVDSOWRAP,,,32)
+
+_OBJS := $(patsubst $(CWD_SRC_ROOT)/%.c,$(CWD_BLD_ROOT)/%32.o,$(_SRCS))
+_OBJS_LIBS_32 := \
+	$(fos_bld_root)/sys/fs/lib/libfs32.a \
+	$(fos_bld_root)/libs/fd/libfd32.a \
+	$(fos_bld_root)/libs/utilities/libutilities32.a \
+	$(fos_bld_root)/name/libname32.a \
+	$(fos_bld_root)/messaging/libdispatch32.a \
+
+$(CWD_BLD_ROOT)/libfaux32.so: $(_OBJS) $(_OBJS_LIBS_32)
+	@printf "$(ORANGE)Creating SO: $(GREEN)$@$(NORMAL)\n" && g++ -m32 -shared -Wl\,-soname,$@ -o $@ $^ -ldl -lrt
+endif
+

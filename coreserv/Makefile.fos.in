@@ -1,0 +1,29 @@
+all: $(CWD_BLD_ROOT)/coreserver $(CWD_BLD_ROOT)/libcore.a
+
+coreserver: $(fos_bld_root)/coreserv/coreserver
+
+coreserver_test: $(fos_bld_root)/coreserv/test
+	@./$^
+	@./$^
+
+_LIBS := $(fos_bld_root)/coreserv/libcore.a \
+		 $(fos_bld_root)/messaging/libdispatch.a \
+		 $(fos_bld_root)/name/libname.a \
+	     -lrt
+
+$(call compile_from_srcs, $(CWD_SRC_ROOT)/coreserver.cpp, $(FAUX_CXXFLAGS))
+
+$(CWD_BLD_ROOT)/coreserver: $(fos_bld_root)/coreserv/coreserver.o $(_LIBS)
+	$(call cxx_link,,$@,$^)
+
+$(call compile_from_srcs, core.cpp, $(FAUX_CXXFLAGS))
+$(call ar_from_srcs, libcore.a, core.cpp)
+
+# tests
+
+$(call compile_from_srcs, $(CWD_SRC_ROOT)/test.cpp, $(FAUX_CXXFLAGS))
+
+$(fos_bld_root)/coreserv/test: $(fos_bld_root)/coreserv/test.o $(_LIBS)
+	$(call cxx_link,,$@,$^)
+
+$(call add_to_global_includes, core, include, )

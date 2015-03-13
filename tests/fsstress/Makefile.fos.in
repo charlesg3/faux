@@ -1,0 +1,6 @@
+
+_FSS_CFLAGS := -I$(fos_bld_root)/include $(FAUX_CFLAGS) -lpthread -I$(CWD_SRC_ROOT) -DNO_XFS -D__USE_LARGEFILE64  -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -std=gnu99  -Wno-unused-but-set-variable -Wno-uninitialized
+
+$(call compile_from_srcs,fsstress.c,$(_FSS_CFLAGS) -m32 -Wno-format)
+$(call cxxlink_from_srcs,fsstress,fsstress.c,$(_LIBS),-m32)
+

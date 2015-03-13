@@ -1,0 +1,35 @@
+Using netmap on faux:
+
+* Building netmap:
+cd to the faux/netmap/net directory and type 'make'
+to make the kernel modules.a
+
+Notes: 
+This ONLY works for a 3.0.x linux kernel.
+You must set the KSRC environment var to the linux-headers
+    for your kernel.  It defaults to /usr/src/linux-headers-`uname -r`
+    which should work in most cases.
+
+* Adding the kernel modules
+In the faux/netmap/net directory, type 'make addmods'
+This will install the compiled kernel module and drivers.
+
+* PREVENT THE SYSTEM FROM CRASHING
+There is a bug with netmap that will crash the system (possibly 
+requiring restart from DRAC) if you do not do this:
+
+For every 10G interface with several rings that you want to run 
+(the 82599EB in swarms, for example), you must run 'make scaleback-ethX'
+where 'ethX' is the name of the corresponding interface.
+
+This will reduce the number of slots per ring to 64 from 512. Allocating
+512 buffers for 40 rings requires more space than netmap's packet buffer allocator
+can handle; destabilizing and most likely crashing the system.
+
+* Use notes
+Before using an interface with netmap, it must be up and should probably be
+put in promiscuous mode (the 10G card needs this especially, otherwise
+it doesn't seem to get packets).
+The 'scaleback-ethX' target does all of this automatically.
+
+

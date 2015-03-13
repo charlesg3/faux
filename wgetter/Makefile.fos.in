@@ -1,0 +1,20 @@
+
+all: $(CWD_BLD_ROOT)/wgetter
+
+wgetter: $(CWD_BLD_ROOT)/wgetter
+
+_WGETTER_CFLAGS := -I$(fos_bld_root)/include $(_CFLAGS) -DLINUX -std=gnu++0x -lpthread
+
+_LIBS += $(fos_bld_root)/libs/utilities/libutilities.a -lpthread
+
+$(call compile_from_srcs,\
+	$(CWD_SRC_ROOT)/main.cpp \
+	$(CWD_SRC_ROOT)/wget.cpp \
+	,$(_WGETTER_CFLAGS))
+
+$(CWD_BLD_ROOT)/wgetter: $(CWD_BLD_ROOT)/wget.o $(CWD_BLD_ROOT)/main.o $(_LIBS)
+	$(call cxx_link,,$@,$^)
+
+run_wgetter: $(CWD_BLD_ROOT)/wgetter $(fos_bld_root)/libs/basicp/libfaux.so
+	LD_PRELOAD=$(fos_bld_root)/libs/basicp/libfaux.so $< 127.0.0.1 80 1
+

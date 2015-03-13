@@ -1,0 +1,18 @@
+
+all: $(CWD_BLD_ROOT)/libvdso-32.so
+
+_VDSO_CFLAGS := -fPIC -Wall -Werror -std=gnu99 -D_GNU_SOURCE=1 -m32 -ggdb
+
+_SRCS := $(CWD_SRC_ROOT)/vdso.c
+_OBJS := $(patsubst $(CWD_SRC_ROOT)/%.c,$(CWD_BLD_ROOT)/%.o,$(_SRCS)) $(CWD_BLD_ROOT)/vdsowrap-32.o
+
+$(CWD_BLD_ROOT)/libvdso-32.so: $(_OBJS)
+	@printf "$(ORANGE)Creating SO: $(GREEN)$@$(NORMAL)\n" && g++ -shared -Wl\,-soname,$@ -o $@ -m32 $^
+
+
+$(CWD_BLD_ROOT)/vdsowrap-32.o: $(CWD_SRC_ROOT)/vdsowrap.S
+	@printf "$(ORANGE)AS: $(GREEN)$@$(NORMAL)\n" && $(CC) $< -c -o $@ $(_VDSO_CFLAGS)
+
+$(call compile_from_srcs,$(_SRCS), -I$(fos_bld_root)/include $(_VDSO_CFLAGS))
+
+$(call add_to_global_includes, vdsowrap, .)

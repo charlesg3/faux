@@ -1,0 +1,22 @@
+
+all: $(CWD_BLD_ROOT)/server
+
+_LIBS := \
+    $(fos_bld_root)/libs/utilities/libutilities.a    \
+    $(fos_bld_root)/messaging/libdispatch.a          \
+    $(fos_bld_root)/sys/fs/libfsserver.a             \
+    $(fos_bld_root)/sys/sched/libschedserver.a       \
+    $(fos_bld_root)/name/libname.a                   \
+    $(fos_bld_root)/libs/utilities/libutilities.a    \
+    -lrt
+
+_SRCS := $(CWD_SRC_ROOT)/server.cpp
+
+_SCHED_CXXFLAGS := $(FAUX_CXXFLAGS) -fpermissive -Wno-error
+
+$(call add_to_global_includes, sys/server, include, )
+
+$(call compile_from_srcs,$(_SRCS),$(_SCHED_CXXFLAGS))
+$(call cxxlink_from_srcs,$(CWD_BLD_ROOT)/server,$(_SRCS),$(_LIBS))
+
+

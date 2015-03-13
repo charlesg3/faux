@@ -1,0 +1,16 @@
+test              "no dir-cache"        "dir-cache"
+mailbench         2.07                  1.31
+fsstress          4.307                 1.758
+psearchy          3.008                 1.273
+punzip            0.833                 0.703
+"build linux"     61.070                59.821
+"pfind (dense)"   3.188                 3.186
+"pfind (sparse)"  79.345                64.296
+"rm (dense)"      8.54                  9.96
+"rm (sparse)"     51.64                 18.95
+writes            3.753                 2.849
+copy              0.480                 0.502
+renames           7.801                 3.845
+creates           6.820                 5.893
+directories       4.730                 4.456
+

@@ -1,0 +1,16 @@
+app              "Linux (1 core)" "Linux (2 cores)"
+mailbench         1.02      1.87
+fsstress          1.34      2.37
+psearchy          1.16      2.21
+punzip            0.99      1.91
+"linux build"     1.12      2.21
+"pfind (dense)"   1.44      2.06
+"pfind (sparse)"  1.50      2.70
+"rm (dense)"      0.99      0.99
+"rm (sparse)"     1.24      1.24
+writes            1.14      2.07
+copy              0.765     1.56
+renames           1.25      1.757
+directories       1.70      1.74
+creates           1.12      1.81
+

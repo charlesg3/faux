@@ -1,0 +1,16 @@
+test             "no Creation Affinity"   "Creation Affinity"
+mailbench        1.23         1.24
+fsstress         0.833        0.725
+psearchy         1.572        0.926
+punzip           1.148        0.950
+"build linux"    60.234      60.152
+"pfind (dense)"  0.23         0.24
+"pfind (sparse)" 6.64         6.63
+"rm (dense)"     0.75         0.74
+"rm (sparse)"    2.86         2.85
+writes           0.292        0.210
+copy             0.516        0.386
+renames          1.401        1.307
+creates          5.928        5.893
+directories      4.484        4.476
+

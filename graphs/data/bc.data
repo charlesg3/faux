@@ -1,0 +1,16 @@
+test             "through RPC"     "direct access"
+mailbench         2.00             1.25
+fsstress          1.20             0.833
+psearchy          7.459            4.193
+punzip            0.644            0.587
+"build linux"     6.105            5.982
+"pfind (dense)"   0.24             0.24
+"pfind (sparse)"  6.70             6.63
+"rm (dense)"      0.74             0.75
+"rm (sparse)"     2.85             2.86
+writes            0.619            0.355
+copy              1.118            0.487
+renames           1.292            1.301
+creates           0.870            0.613
+directories       4.466            4.471
+

@@ -1,0 +1,53 @@
+
+all: $(fos_bld_root)/include/config/config.h
+
+config:
+
+MCONF_SRCS := \
+zconf.tab.c \
+mconf.c \
+
+CONF_SRCS := \
+zconf.tab.c \
+conf.c \
+
+ALL_CONF_SRCS := \
+zconf.tab.c \
+conf.c \
+mconf.c \
+
+$(eval $(call compile_from_srcs, $(ALL_CONF_SRCS), -DCURSES_LOC="<ncurses.h>" -ggdb))
+
+$(CWD_BLD_ROOT)/mconf: $(patsubst %.c,$(CWD_BLD_ROOT)/%.o,$(MCONF_SRCS))
+	@$(call colorize,Linking,$@,gcc -o $@ $^)
+
+$(CWD_BLD_ROOT)/conf: $(patsubst %.c,$(CWD_BLD_ROOT)/%.o,$(CONF_SRCS))
+	@$(call colorize,Linking,$@,gcc -o $@ $^)
+
+KERNELVERSION = 0.3
+export KERNELVERSION
+
+menuconfig: $(CWD_BLD_ROOT)/mconf $(CWD_BLD_ROOT)/lxdialog/lxdialog
+	$< $(fos_src_root)/Config.in $(fos_bld_root)/common/kconfig/lxdialog/lxdialog
+
+config: $(CWD_BLD_ROOT)/conf $(fos_src_root)/Config.in .config
+	$< -s $(fos_src_root)/Config.in
+
+.tmpconfig.h: $(CWD_BLD_ROOT)/conf $(fos_src_root)/Config.in .config
+	$< -s $(fos_src_root)/Config.in
+
+.config:
+	$(call cp, $@, $(fos_src_root)/common/kconfig/.config_example)
+
+$(fos_src_root)/common/kconfig/include/config.h: .tmpconfig.h
+	$(call cp, $@, .tmpconfig.h)
+
+$(fos_bld_root)/include/config/config.h: .tmpconfig.h
+	$(call cp, $@, .tmpconfig.h)
+
+_SUBDIRS:=lxdialog
+
+$(call include_makefiles_func, \
+    $(strip $(addsuffix $(strip /Makefile.fos.in), $(_SUBDIRS))))
+
+$(call add_to_global_includes, config, include, )

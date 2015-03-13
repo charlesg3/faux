@@ -1,0 +1,19 @@
+
+all: $(CWD_BLD_ROOT)/libnetstack.a
+
+_LIB_SRCS := socket_wrapper.cpp socket.cpp
+
+_CFLAGS=-I$(fos_bld_root)/include/lwip/lwip          \
+			-I$(fos_bld_root)/include/lwip           \
+			-I$(fos_bld_root)/include/lwip/arch      \
+			-I$(fos_bld_root)/include/lwip/lwip/ipv4 \
+			-I$(fos_bld_root)/include/net            \
+			-I$(fos_bld_root)/include/netmap         \
+			-I$(fos_src_root)/sys/net/conn           \
+			-I$(fos_src_root)/sys/net/transport      \
+			-I$(fos_bld_root)/include -fPIC          \
+			$(FAUX_OPT) -std=gnu++0x -Wno-strict-aliasing -Wno-vla
+
+$(call compile_from_srcs,$(_LIB_SRCS),$(_CFLAGS))
+
+$(call ar_from_srcs, libnetstack.a, $(_LIB_SRCS), , , ,)

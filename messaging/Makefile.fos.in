@@ -1,0 +1,11 @@
+
+
+$(call compile_from_srcs, channel.cpp dispatch.cpp threading.cpp, $(FAUX_CXXFLAGS))
+$(call ar_from_srcs, libdispatch.a, channel.cpp dispatch.cpp threading.cpp, , , ,)
+
+ifeq ($(ARCH),64)
+$(call compile_from_srcs, channel.cpp dispatch.cpp threading.cpp, $(FAUX_CXXFLAGS) -m32,,,32)
+$(call ar_from_srcs, libdispatch32.a, channel.cpp dispatch.cpp threading.cpp,,,,,32)
+endif
+
+$(call add_to_global_includes, messaging, include, )

@@ -1,0 +1,450 @@
+diff -ubwr --exclude Makefile /usr/src/linux-3.0.3/drivers/net/e1000/e1000_main.c net/e1000/e1000_main.c
+--- /usr/src/linux-3.0.3/drivers/net/e1000/e1000_main.c	2011-08-05 06:59:21.000000000 +0200
++++ net/e1000/e1000_main.c	2012-02-17 11:16:41.396764444 +0100
+@@ -222,6 +222,10 @@
+ module_param(debug, int, 0);
+ MODULE_PARM_DESC(debug, "Debug level (0=none,...,16=all)");
+ 
++#if defined(CONFIG_NETMAP) || defined(CONFIG_NETMAP_MODULE)
++#include <netmap/if_e1000_netmap.h>
++#endif
++
+ /**
+  * e1000_get_hw_dev - return device
+  * used by hardware layer to print debugging information
+@@ -393,6 +397,10 @@
+ 	e1000_configure_tx(adapter);
+ 	e1000_setup_rctl(adapter);
+ 	e1000_configure_rx(adapter);
++#ifdef DEV_NETMAP
++	if (e1000_netmap_init_buffers(adapter))
++		return;
++#endif /* DEV_NETMAP */
+ 	/* call E1000_DESC_UNUSED which always leaves
+ 	 * at least 1 descriptor unused to make sure
+ 	 * next_to_use != next_to_clean */
+@@ -1175,6 +1183,10 @@
+ 	if (err)
+ 		goto err_register;
+ 
++#ifdef DEV_NETMAP
++	e1000_netmap_attach(adapter);
++#endif /* DEV_NETMAP */
++
+ 	/* print bus type/speed/width info */
+ 	e_info(probe, "(PCI%s:%dMHz:%d-bit) %pM\n",
+ 	       ((hw->bus_type == e1000_bus_type_pcix) ? "-X" : ""),
+@@ -1247,6 +1259,10 @@
+ 	kfree(adapter->tx_ring);
+ 	kfree(adapter->rx_ring);
+ 
++#ifdef DEV_NETMAP
++	netmap_detach(netdev);
++#endif /* DEV_NETMAP */
++
+ 	iounmap(hw->hw_addr);
+ 	if (hw->flash_address)
+ 		iounmap(hw->flash_address);
+@@ -3559,6 +3576,10 @@
+ 	unsigned int count = 0;
+ 	unsigned int total_tx_bytes=0, total_tx_packets=0;
+ 
++#ifdef DEV_NETMAP
++	if (netmap_tx_irq(netdev, 0))
++		return 1; /* cleaned ok */
++#endif /* DEV_NETMAP */
+ 	i = tx_ring->next_to_clean;
+ 	eop = tx_ring->buffer_info[i].next_to_watch;
+ 	eop_desc = E1000_TX_DESC(*tx_ring, eop);
+@@ -3952,6 +3973,10 @@
+ 	bool cleaned = false;
+ 	unsigned int total_rx_bytes=0, total_rx_packets=0;
+ 
++#ifdef DEV_NETMAP
++	if (netmap_rx_irq(netdev, 0, work_done))
++		return 1; /* seems to be ignored */
++#endif /* DEV_NETMAP */
+ 	i = rx_ring->next_to_clean;
+ 	rx_desc = E1000_RX_DESC(*rx_ring, i);
+ 	buffer_info = &rx_ring->buffer_info[i];
+diff -ubwr --exclude Makefile /usr/src/linux-3.0.3/drivers/net/e1000e/netdev.c net/e1000e/netdev.c
+--- /usr/src/linux-3.0.3/drivers/net/e1000e/netdev.c	2011-08-05 06:59:21.000000000 +0200
++++ net/e1000e/netdev.c	2012-02-17 15:15:54.205146915 +0100
+@@ -139,6 +139,10 @@
+ 	{}
+ };
+ 
++#if defined(CONFIG_NETMAP) || defined(CONFIG_NETMAP_MODULE)
++#include <netmap/if_e1000e_netmap.h>
++#endif
++
+ /*
+  * e1000_regdump - register printout routine
+  */
+@@ -780,6 +784,10 @@
+ 	bool cleaned = 0;
+ 	unsigned int total_rx_bytes = 0, total_rx_packets = 0;
+ 
++#ifdef DEV_NETMAP
++	if (netmap_rx_irq(netdev, 0, work_done))
++		return 1; /* seems to be ignored */
++#endif /* DEV_NETMAP */
+ 	i = rx_ring->next_to_clean;
+ 	rx_desc = E1000_RX_DESC(*rx_ring, i);
+ 	buffer_info = &rx_ring->buffer_info[i];
+@@ -996,6 +1004,10 @@
+ 	unsigned int count = 0;
+ 	unsigned int total_tx_bytes = 0, total_tx_packets = 0;
+ 
++#ifdef DEV_NETMAP
++	if (netmap_tx_irq(netdev, 0))
++		return 1; /* cleaned ok */
++#endif /* DEV_NETMAP */
+ 	i = tx_ring->next_to_clean;
+ 	eop = tx_ring->buffer_info[i].next_to_watch;
+ 	eop_desc = E1000_TX_DESC(*tx_ring, eop);
+@@ -3104,6 +3116,10 @@
+ 	e1000_configure_tx(adapter);
+ 	e1000_setup_rctl(adapter);
+ 	e1000_configure_rx(adapter);
++#ifdef DEV_NETMAP
++	if (e1000e_netmap_init_buffers(adapter))
++		return;
++#endif /* DEV_NETMAP */
+ 	adapter->alloc_rx_buf(adapter, e1000_desc_unused(adapter->rx_ring));
+ }
+ 
+@@ -6089,6 +6105,9 @@
+ 	if (err)
+ 		goto err_register;
+ 
++#ifdef DEV_NETMAP
++	e1000_netmap_attach(adapter);
++#endif /* DEV_NETMAP */
+ 	/* carrier off reporting is important to ethtool even BEFORE open */
+ 	netif_carrier_off(netdev);
+ 
+@@ -6176,6 +6195,10 @@
+ 	kfree(adapter->tx_ring);
+ 	kfree(adapter->rx_ring);
+ 
++#ifdef DEV_NETMAP
++	netmap_detach(netdev);
++#endif /* DEV_NETMAP */
++
+ 	iounmap(adapter->hw.hw_addr);
+ 	if (adapter->hw.flash_address)
+ 		iounmap(adapter->hw.flash_address);
+diff -ubwr --exclude Makefile /usr/src/linux-3.0.3/drivers/net/forcedeth.c net/forcedeth.c
+--- /usr/src/linux-3.0.3/drivers/net/forcedeth.c	2011-08-05 06:59:21.000000000 +0200
++++ net/forcedeth.c	2012-02-17 11:16:41.404764449 +0100
+@@ -1865,12 +1865,25 @@
+ 	}
+ }
+ 
++#if defined(CONFIG_NETMAP) || defined(CONFIG_NETMAP_MODULE)
++/* we need a few forward declarations */
++static void nv_drain_rxtx(struct net_device *dev);
++static int nv_init_ring(struct net_device *dev);
++#include <netmap/forcedeth_netmap.h>
++#endif
++
+ static int nv_init_ring(struct net_device *dev)
+ {
+ 	struct fe_priv *np = netdev_priv(dev);
+ 
+ 	nv_init_tx(dev);
+ 	nv_init_rx(dev);
++#ifdef DEV_NETMAP
++	forcedeth_netmap_tx_init(np);
++	if (forcedeth_netmap_rx_init(np))
++		return 0; /* success */
++#endif /* DEV_NETMAP */
++
+ 
+ 	if (!nv_optimized(np))
+ 		return nv_alloc_rx(dev);
+@@ -3386,6 +3399,11 @@
+ 	int i;
+ 	unsigned long flags;
+ 
++#ifdef DEV_NETMAP
++	if (netmap_tx_irq(dev, 0))
++		return IRQ_HANDLED;
++#endif /* DEV_NETMAP */
++
+ 	for (i = 0;; i++) {
+ 		events = readl(base + NvRegMSIXIrqStatus) & NVREG_IRQ_TX_ALL;
+ 		writel(NVREG_IRQ_TX_ALL, base + NvRegMSIXIrqStatus);
+@@ -3497,6 +3515,11 @@
+ 	int i;
+ 	unsigned long flags;
+ 
++#ifdef DEV_NETMAP
++	if (netmap_rx_irq(dev, 0, &i))
++		return IRQ_HANDLED;
++#endif /* DEV_NETMAP */
++
+ 	for (i = 0;; i++) {
+ 		events = readl(base + NvRegMSIXIrqStatus) & NVREG_IRQ_RX_ALL;
+ 		writel(NVREG_IRQ_RX_ALL, base + NvRegMSIXIrqStatus);
+@@ -5615,6 +5638,10 @@
+ 		goto out_error;
+ 	}
+ 
++#ifdef DEV_NETMAP
++	forcedeth_netmap_attach(np);
++#endif /* DEV_NETMAP */
++
+ 	netif_carrier_off(dev);
+ 
+ 	dev_info(&pci_dev->dev, "ifname %s, PHY OUI 0x%x @ %d, addr %pM\n",
+@@ -5698,6 +5725,10 @@
+ 
+ 	unregister_netdev(dev);
+ 
++#ifdef DEV_NETMAP
++	netmap_detach(dev);
++#endif /* DEV_NETMAP */
++
+ 	nv_restore_mac_addr(pci_dev);
+ 
+ 	/* restore any phy related changes */
+diff -ubwr --exclude Makefile /usr/src/linux-3.0.3/drivers/net/igb/igb_main.c net/igb/igb_main.c
+--- /usr/src/linux-3.0.3/drivers/net/igb/igb_main.c	2011-08-05 06:59:21.000000000 +0200
++++ net/igb/igb_main.c	2012-02-16 11:48:41.457210099 +0100
+@@ -214,6 +214,10 @@
+ MODULE_LICENSE("GPL");
+ MODULE_VERSION(DRV_VERSION);
+ 
++#if defined(CONFIG_NETMAP) || defined(CONFIG_NETMAP_MODULE)
++#include <netmap/if_igb_netmap.h>
++#endif
++
+ struct igb_reg_info {
+ 	u32 ofs;
+ 	char *name;
+@@ -2042,6 +2046,10 @@
+ 	/* carrier off reporting is important to ethtool even BEFORE open */
+ 	netif_carrier_off(netdev);
+ 
++#ifdef DEV_NETMAP
++	igb_netmap_attach(adapter);
++#endif /* DEV_NETMAP */
++
+ #ifdef CONFIG_IGB_DCA
+ 	if (dca_add_requester(&pdev->dev) == 0) {
+ 		adapter->flags |= IGB_FLAG_DCA_ENABLED;
+@@ -2163,6 +2171,10 @@
+ 		dev_info(&pdev->dev, "IOV Disabled\n");
+ 	}
+ #endif
++#ifdef DEV_NETMAP
++	netmap_detach(netdev);
++#endif /* DEV_NETMAP */
++
+ 
+ 	iounmap(hw->hw_addr);
+ 	if (hw->flash_address)
+@@ -2651,6 +2663,9 @@
+ 
+ 	txdctl |= E1000_TXDCTL_QUEUE_ENABLE;
+ 	wr32(E1000_TXDCTL(reg_idx), txdctl);
++#ifdef DEV_NETMAP
++	igb_netmap_configure_tx_ring(adapter, reg_idx);
++#endif /* DEV_NETMAP */
+ }
+ 
+ /**
+@@ -5583,6 +5598,11 @@
+ 	unsigned int i, eop, count = 0;
+ 	bool cleaned = false;
+ 
++#ifdef DEV_NETMAP
++        if (netmap_tx_irq(netdev, tx_ring->queue_index))
++                return 1; /* cleaned ok */
++#endif /* DEV_NETMAP */
++
+ 	i = tx_ring->next_to_clean;
+ 	eop = tx_ring->buffer_info[i].next_to_watch;
+ 	eop_desc = E1000_TX_DESC_ADV(*tx_ring, eop);
+@@ -5793,6 +5813,11 @@
+ 	u16 length;
+ 	u16 vlan_tag;
+ 
++#ifdef DEV_NETMAP
++	if (netmap_rx_irq(netdev, rx_ring->queue_index, work_done))
++		return 1;
++#endif /* DEV_NETMAP */
++
+ 	i = rx_ring->next_to_clean;
+ 	buffer_info = &rx_ring->buffer_info[i];
+ 	rx_desc = E1000_RX_DESC_ADV(*rx_ring, i);
+@@ -5924,6 +5949,10 @@
+ 	unsigned int i;
+ 	int bufsz;
+ 
++#ifdef DEV_NETMAP
++	if (igb_netmap_configure_rx_ring(rx_ring))
++                return;
++#endif /* DEV_NETMAP */
+ 	i = rx_ring->next_to_use;
+ 	buffer_info = &rx_ring->buffer_info[i];
+ 
+diff -ubwr --exclude Makefile /usr/src/linux-3.0.3/drivers/net/ixgbe/ixgbe_main.c net/ixgbe/ixgbe_main.c
+--- /usr/src/linux-3.0.3/drivers/net/ixgbe/ixgbe_main.c	2011-08-05 06:59:21.000000000 +0200
++++ net/ixgbe/ixgbe_main.c	2012-02-17 11:55:06.740825826 +0100
+@@ -247,6 +247,22 @@
+ 	{}
+ };
+ 
++#if defined(CONFIG_NETMAP) || defined(CONFIG_NETMAP_MODULE)
++/*
++ * The #ifdef DEV_NETMAP / #endif blocks in this file are meant to
++ * be a reference on how to implement netmap support in a driver.
++ * Additional comments are in ixgbe_netmap_linux.h .
++ *
++ * The code is originally developed on FreeBSD and in the interest
++ * of maintainability we try to limit differences between the two systems.
++ *
++ * <netmap/ixgbe_netmap_linux.h> contains functions for netmap support
++ * that extend the standard driver.
++ * It also defines DEV_NETMAP so further conditional sections use
++ * that instead of CONFIG_NETMAP
++ */
++#include <netmap/ixgbe_netmap_linux.h>
++#endif
+ 
+ /*
+  * ixgbe_regdump - register printout routine
+@@ -864,6 +880,16 @@
+ 	unsigned int total_bytes = 0, total_packets = 0;
+ 	u16 i, eop, count = 0;
+ 
++#ifdef DEV_NETMAP
++	/*
++	 * In netmap mode, all the work is done in the context
++	 * of the client thread. Interrupt handlers only wake up
++	 * clients, which may be sleeping on individual rings
++	 * or on a global resource for all rings.
++	 */
++	if (netmap_tx_irq(adapter->netdev, tx_ring->queue_index))
++		return 1; /* seems to be ignored */
++#endif /* DEV_NETMAP */
+ 	i = tx_ring->next_to_clean;
+ 	eop = tx_ring->tx_buffer_info[i].next_to_watch;
+ 	eop_desc = IXGBE_TX_DESC_ADV(tx_ring, eop);
+@@ -1348,6 +1374,13 @@
+ 	u16 cleaned_count = 0;
+ 	bool pkt_is_rsc = false;
+ 
++#ifdef DEV_NETMAP
++	/*
++	 * Same as the txeof routine: only wakeup clients on intr.
++	 */
++	if (netmap_rx_irq(adapter->netdev, rx_ring->queue_index, work_done))
++		return;
++#endif /* DEV_NETMAP */
+ 	i = rx_ring->next_to_clean;
+ 	rx_desc = IXGBE_RX_DESC_ADV(rx_ring, i);
+ 	staterr = le32_to_cpu(rx_desc->wb.upper.status_error);
+@@ -2808,6 +2841,9 @@
+ 	} while (--wait_loop && !(txdctl & IXGBE_TXDCTL_ENABLE));
+ 	if (!wait_loop)
+ 		e_err(drv, "Could not enable Tx Queue %d\n", reg_idx);
++#ifdef DEV_NETMAP
++	ixgbe_netmap_configure_tx_ring(adapter, reg_idx);
++#endif /* DEV_NETMAP */
+ }
+ 
+ static void ixgbe_setup_mtqc(struct ixgbe_adapter *adapter)
+@@ -3183,6 +3219,10 @@
+ 	IXGBE_WRITE_REG(hw, IXGBE_RXDCTL(reg_idx), rxdctl);
+ 
+ 	ixgbe_rx_desc_queue_enable(adapter, ring);
++#ifdef DEV_NETMAP
++	if (ixgbe_netmap_configure_rx_ring(adapter, reg_idx))
++		return;
++#endif /* DEV_NETMAP */
+ 	ixgbe_alloc_rx_buffers(ring, IXGBE_DESC_UNUSED(ring));
+ }
+ 
+@@ -5586,6 +5626,9 @@
+ 		goto err_up;
+ 
+ 	netif_tx_start_all_queues(netdev);
++#ifdef DEV_NETMAP
++	ixgbe_netmap_attach(adapter);
++#endif /* DEV_NETMAP */
+ 
+ 	return 0;
+ 
+diff -ubwr --exclude Makefile /usr/src/linux-3.0.3/drivers/net/r8169.c net/r8169.c
+--- /usr/src/linux-3.0.3/drivers/net/r8169.c	2011-08-18 09:37:02.000000000 +0200
++++ net/r8169.c	2012-02-17 11:16:41.408764449 +0100
+@@ -705,6 +705,10 @@
+ static const unsigned int rtl8169_rx_config =
+ 	(RX_FIFO_THRESH << RxCfgFIFOShift) | (RX_DMA_BURST << RxCfgDMAShift);
+ 
++#if defined(CONFIG_NETMAP) || defined(CONFIG_NETMAP_MODULE)
++#include <netmap/if_re_netmap_linux.h>
++#endif
++
+ static u32 ocp_read(struct rtl8169_private *tp, u8 mask, u16 reg)
+ {
+ 	void __iomem *ioaddr = tp->mmio_addr;
+@@ -3467,6 +3471,10 @@
+ 	if (pci_dev_run_wake(pdev))
+ 		pm_runtime_put_noidle(&pdev->dev);
+ 
++#ifdef DEV_NETMAP
++	re_netmap_attach(tp);
++#endif /* DEV_NETMAP */
++
+ 	netif_carrier_off(dev);
+ 
+ out:
+@@ -3502,6 +3510,9 @@
+ 
+ 	rtl_release_firmware(tp);
+ 
++#ifdef DEV_NETMAP
++	netmap_detach(dev);
++#endif /* DEV_NETMAP */
+ 	if (pci_dev_run_wake(pdev))
+ 		pm_runtime_get_noresume(&pdev->dev);
+ 
+@@ -4438,6 +4449,11 @@
+ static int rtl8169_rx_fill(struct rtl8169_private *tp)
+ {
+ 	unsigned int i;
++#ifdef DEV_NETMAP
++	re_netmap_tx_init(tp);
++	if (re_netmap_rx_init(tp))
++		return 0; // success
++#endif /* DEV_NETMAP */
+ 
+ 	for (i = 0; i < NUM_RX_DESC; i++) {
+ 		void *data;
+@@ -4821,6 +4837,10 @@
+ {
+ 	unsigned int dirty_tx, tx_left;
+ 
++#ifdef DEV_NETMAP
++	if (netmap_tx_irq(dev, 0))
++		return;
++#endif /* DEV_NETMAP */
+ 	dirty_tx = tp->dirty_tx;
+ 	smp_rmb();
+ 	tx_left = tp->cur_tx - dirty_tx;
+@@ -4908,6 +4928,10 @@
+ 	unsigned int cur_rx, rx_left;
+ 	unsigned int count;
+ 
++#ifdef DEV_NETMAP
++	if (netmap_rx_irq(dev, 0, &count))
++   		return count;
++#endif /* DEV_NETMAP */
+ 	cur_rx = tp->cur_rx;
+ 	rx_left = NUM_RX_DESC + tp->dirty_rx - cur_rx;
+ 	rx_left = min(rx_left, budget);

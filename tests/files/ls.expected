@@ -1,0 +1,8 @@
+drwxrwxrwx 0 root root 4096  .
+drwxr-xr-x 0 root root 4096  ..
+drwxr-xr-x 0 root root 4096  d1
+drwxr-xr-x 0 root root 4096  d2
+-rw-rw-rw- 0 root root    0  f1
+-rw-rw-rw- 0 root root   13  f2
+lrwxrwxrwx 0 root root    5  s1 -> d1/f1
+lrwxrwxrwx 0 root root   15  s2 -> /does/not/exist

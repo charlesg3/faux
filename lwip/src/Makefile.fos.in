@@ -1,0 +1,85 @@
+_SUBDIRS:=api core netif
+
+_LWIP_CFLAGS:=$(G_PVM_OPT_CFLAGS) -I$(fos_bld_root)/include \
+    -I$(fos_bld_root)/include/arch/$(TGT_ARCH) \
+    -I$(fos_bld_root)/include/plat/pvm \
+    -I$(fos_bld_root)/include/basicc \
+    -I$(fos_bld_root)/include/lwip/arch \
+    -I$(fos_bld_root)/include/lwip/lwip \
+    -I$(fos_bld_root)/include/lwip/lwip/ipv4 \
+    -I$(fos_bld_root)/include/basicc/arch/$(TGT_ARCH) \
+    $(FAUX_OPT)
+
+$(call include_makefiles_func, \
+    $(strip $(addsuffix $(strip /Makefile.fos.in), $(_SUBDIRS))))
+
+_LOCAL_SRCS:=                 \
+    api/sockets.c \
+    api/err.c \
+    api/tcpip.c \
+    api/api_msg.c \
+    api/netifapi.c \
+    api/netdb.c \
+    api/netbuf.c \
+    api/api_lib.c \
+    core/mem.c \
+    core/init.c \
+    core/tcp_out.c \
+    core/pbuf.c \
+    core/sys.c \
+    core/ipv4/icmp.c \
+    core/ipv4/ip_addr.c \
+    core/ipv4/igmp.c \
+    core/ipv4/ip.c \
+    core/ipv4/inet.c \
+    core/ipv4/inet_chksum.c \
+    core/ipv4/autoip.c \
+    core/ipv4/ip_frag.c \
+    core/udp.c \
+    core/netif.c \
+    core/stats.c \
+    core/tcp.c \
+    core/dhcp.c \
+    core/memp.c \
+    core/dns.c \
+    core/tcp_in.c \
+    core/raw.c \
+    netif/ethernetif.c \
+    netif/etharp.c \
+    netif/slipif.c \
+    netif/loopif.c \
+    $(fos_bld_root)/lwip/lwip_arch/lwip-arch.c \
+    $(fos_bld_root)/lwip/lwip_arch/lwip-net.c  # using bld_root here doesn't really make sense, but ...
+
+
+
+
+
+_LOCAL_SRCS_DISABLED:=                 \
+    core/snmp/mib2.c \
+    core/snmp/msg_in.c \
+    core/snmp/asn1_enc.c \
+    core/snmp/mib_structs.c \
+    core/snmp/asn1_dec.c \
+    core/snmp/msg_out.c \
+    core/ipv6/icmp6.c \
+    core/ipv6/ip6.c \
+    core/ipv6/inet6.c \
+    core/ipv6/ip6_addr.c \
+    netif/ppp/ppp.c \
+    netif/ppp/lcp.c \
+    netif/ppp/fsm.c \
+    netif/ppp/chap.c \
+    netif/ppp/ppp_oe.c \
+    netif/ppp/chpms.c \
+    netif/ppp/ipcp.c \
+    netif/ppp/pap.c \
+    netif/ppp/magic.c \
+    netif/ppp/auth.c \
+    netif/ppp/md5.c \
+    netif/ppp/vj.c \
+    netif/ppp/randm.c \
+
+$(call ar_from_srcs, liblwip.a, $(_LOCAL_SRCS), , , ,)
+
+all: $(CWD_BLD_ROOT)/liblwip.a

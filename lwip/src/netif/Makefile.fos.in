@@ -1,0 +1,5 @@
+
+_LOCAL_SRCS:=etharp.c  ethernetif.c  loopif.c  slipif.c
+
+$(call compile_from_srcs, $(_LOCAL_SRCS), $(_LWIP_CFLAGS))
+

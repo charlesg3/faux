@@ -1,0 +1,38 @@
+all: $(CWD_BLD_ROOT)/channel_server $(CWD_BLD_ROOT)/channel_client $(CWD_BLD_ROOT)/dispatch_server $(CWD_BLD_ROOT)/dispatch_client
+
+_LIBS := $(fos_bld_root)/name/libname.a          \
+		 $(fos_bld_root)/messaging/libdispatch.a \
+	     -lrt
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/channel_server.cpp,$(FAUX_CXXFLAGS))
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/channel_client.cpp,$(FAUX_CXXFLAGS))
+
+$(CWD_BLD_ROOT)/channel_server: $(fos_bld_root)/example/channel_server.o $(_LIBS)
+	$(call cxx_link,,$@,$^)
+
+$(CWD_BLD_ROOT)/channel_client: $(fos_bld_root)/example/channel_client.o $(_LIBS)
+	$(call cxx_link,,$@,$^)
+
+channel_server: $(CWD_BLD_ROOT)/channel_server
+	@./$^
+
+channel_client: $(CWD_BLD_ROOT)/channel_client
+	@./$^
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/dispatch_server.cpp,$(FAUX_CXXFLAGS))
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/dispatch_client.cpp,$(FAUX_CXXFLAGS))
+
+$(CWD_BLD_ROOT)/dispatch_server: $(fos_bld_root)/example/dispatch_server.o $(_LIBS)
+	$(call cxx_link,,$@,$^)
+
+$(CWD_BLD_ROOT)/dispatch_client: $(fos_bld_root)/example/dispatch_client.o $(_LIBS)
+	$(call cxx_link,,$@,$^)
+
+dispatch_server: $(CWD_BLD_ROOT)/dispatch_server
+	@./$^
+
+dispatch_client: $(CWD_BLD_ROOT)/dispatch_client
+	@./$^
+

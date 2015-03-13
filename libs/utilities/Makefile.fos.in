@@ -1,0 +1,16 @@
+
+_CFLAGS:=-I$(fos_bld_root)/include -fPIC $(FAUX_OPT) -m32
+
+_SRCS := time_arith.c lock.c space_alloc.c print_trace.c
+
+$(call compile_from_srcs, $(_SRCS), $(_CFLAGS) -m32)
+$(call ar_from_srcs, libutilities.a, $(_SRCS))
+
+# 32bit version
+ifeq ($(ARCH),64)
+$(call compile_from_srcs, $(_SRCS), $(_CFLAGS) -m32,,,32)
+$(call ar_from_srcs, libutilities32.a, $(_SRCS),,,,,32)
+endif
+
+$(call add_to_global_includes, utilities, include)
+

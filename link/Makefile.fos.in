@@ -1,0 +1,41 @@
+$(call add_to_global_includes, net, include, )
+
+_INCLUDES = -I$(fos_bld_root)/include/net -I$(fos_bld_root)/include/netmap -I$(fos_bld_root)/include
+
+$(call compile_from_srcs, netif.c, $(FAUX_OPT) $(_INCLUDES))
+$(call compile_from_srcs, lib.cpp, $(FAUX_CFLAGS) $(_INCLUDES))
+$(call compile_from_srcs, netifperf.c, $(FAUX_OPT) $(_INCLUDES))
+$(call ar_from_srcs, liblink.a, netif.c lib.cpp, \
+		$(fos_bld_root)/libs/utilities/time_arith.o, , ,)
+
+
+_LIBS := $(fos_bld_root)/link/liblink.a          \
+		 $(fos_bld_root)/name/libname.a          \
+		 $(fos_bld_root)/messaging/libdispatch.a \
+	     -lrt
+
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/test.cpp, $(FAUX_CFLAGS) $(_INCLUDES))
+$(call compile_from_srcs,$(CWD_SRC_ROOT)/perf.cpp, $(FAUX_CFLAGS) $(_INCLUDES))
+
+$(CWD_BLD_ROOT)/cpplinktest: $(fos_bld_root)/link/test.o $(_LIBS)
+	$(call cxx_link,,$@,$^)
+
+$(CWD_BLD_ROOT)/cpplinkperf: $(fos_bld_root)/link/perf.o $(_LIBS)
+	$(call cxx_link,,$@,$^)
+
+$(CWD_BLD_ROOT)/netifperf: $(fos_bld_root)/link/netifperf.o $(_LIBS)
+	$(call cxx_link,,$@,$^)
+
+cpplink_test: $(CWD_BLD_ROOT)/cpplinktest
+	@./$^ $(NIF)
+
+cpplink_perf: $(CWD_BLD_ROOT)/cpplinkperf
+	@./$^ $(NIF)
+
+netif_perf: $(CWD_BLD_ROOT)/netifperf
+	@./$^ $(NIF)
+
+_SUBDIRS := linkserver
+
+$(call include_makefiles_func, \
+    $(strip $(addsuffix $(strip /Makefile.fos.in), $(_SUBDIRS))))

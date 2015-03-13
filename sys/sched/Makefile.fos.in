@@ -1,0 +1,16 @@
+
+_SRCS := \
+    $(CWD_SRC_ROOT)/server.cpp                         \
+    $(CWD_SRC_ROOT)/marshall.cpp
+
+_SCHED_CXXFLAGS := $(FAUX_CXXFLAGS) -fpermissive -Wno-error
+
+$(call compile_from_srcs,$(_SRCS),$(_SCHED_CXXFLAGS))
+$(call ar_from_srcs, libschedserver.a, $(_SRCS),,,,)
+
+_SUBDIRS:= lib
+
+$(call add_to_global_includes, sys/sched, include, )
+
+$(call include_makefiles_func, \
+    $(strip $(addsuffix $(strip /Makefile.fos.in), $(_SUBDIRS))))

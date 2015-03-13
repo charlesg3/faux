@@ -1,0 +1,24 @@
+# $(1) - test name
+# $(2) - CFLAGS
+define _faux_build_test
+
+all : $(CWD_BLD_ROOT)/$(1)
+
+$(call compile_from_srcs, $(CWD_SRC_ROOT)/$(1).cpp, $(2))
+
+$(CWD_BLD_ROOT)/$(1): $(fos_bld_root)/test/$(1).o $(_LIBS)
+	$(call cxx_link,,$$@,$$^)
+
+endef
+
+# builds a faux test
+# $(1) - test name
+# $(2) - CFLAGS
+faux_build_test = \
+    $(eval $(call _faux_build_test,$(strip $(1)),$(2)))
+
+# builds multiple tests
+# $(1) - list of tests
+# $(2) - CFLAGS
+faux_build_tests = \
+    $(foreach file, $(1), $(call faux_build_test, $(file), $(2)))

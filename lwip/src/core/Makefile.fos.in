@@ -1,0 +1,6 @@
+
+_LOCAL_SRCS:=dhcp.c dns.c  init.c  mem.c  memp.c  netif.c  pbuf.c  raw.c  stats.c  sys.c  tcp.c  tcp_in.c  tcp_out.c  udp.c \
+             ipv4/autoip.c  ipv4/icmp.c  ipv4/igmp.c  ipv4/inet.c  ipv4/inet_chksum.c  ipv4/ip_addr.c  ipv4/ip.c  ipv4/ip_frag.c
+
+$(call compile_from_srcs, $(_LOCAL_SRCS), $(_LWIP_CFLAGS))
+

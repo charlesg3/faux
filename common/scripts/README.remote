@@ -1,0 +1,80 @@
+Remote tests readme
+
+Remote tests may be run using the script common/scripts/runremote.py,
+the runremote target for faux.py, or the faux_remote_test make target. 
+
+
+[runremote.py]
+runremote.py <server list> <script> [output=file] [sync=#] <arguments ...>
+
+This will run <script> on each server in the comma-deliminted <server list>.
+
+Each server in <server list> may be in the format 'user@server' or simply
+the hostname of the server. If the user is not specified, it defaults to
+'fauxtest'. Private keys for this user are installed for root on every
+swarm, and public keys have been authorized for 'fauxtest' to login
+on every swarm. So this works without asking for by default.
+
+The execution process is as follows:
+1. A new thread is spawned for each server in the list (if there is only 1, 
+however, the main thread will be used).
+2. Each thread connects over ssh to a server and uploads the script using sftp.
+3. When the synchronization time has elapsed (see below) the thread will
+issue the command executing the script with the specified arguments.
+4. Output is automatically echoed, but if the output option is specified
+it may be logged to a file (see below).
+5. The thread cleans up by removing the script it uploaded, and then
+closes the connection.
+
+If [output=file] is specified, the output of each remote execution will be
+concatenated and stored in the specified file. The file is truncated before
+any data is written.
+
+If [sync=#] is specified and '#' is a number, each thread will wait for # 
+seconds after the main thread has started before issuing the command
+to the server. When multiple servers are specified, this ensures that
+the remote commands are run roughly at the same time.
+
+Arguments may include the special value UNIQUE_PORT. This placeholder is
+replaced with a unique value starting at 10000 for each ssh thread. 
+This may be used to instruct remote processes to bind to a certain port
+when executed, ensuring that remote connections have unique source ports
+and therefore map to different flow director groups.
+
+Example:
+
+* runremote.py swarm1,swarm3 ./runtest.sh output=tempoutput sync=2 128.30.113.252 UNIQUE_PORT
+
+This example runs the script ./runtest.sh on swarm1 and swarm3 concurrently after a 2 second
+delay.
+
+The script on swarm1 will be run as: runtest.sh 128.30.113.252 10000
+The script on swarm3 will be run as: runtest.sh 128.30.113.252 10001
+
+
+
+[faux.py runremote=<OPTIONS>]
+runremote has been added to faux.py. The options here are
+the same as for the runremote.py script above. Note that running through
+this interface will allow you to use the special IP_ADDRESS replacement
+that is set to the IP from the netstack output.
+
+[make faux_remote_test]
+This make target does the same thing as make faux, but after starting the webserver it
+runs runremote.
+
+The options are set in the Makefile, and can be overridden on the command line.
+
+Options:
+REMOTE_SERVERS=...    -  The servers to connect to (default: swarm1)
+REMOTE_SCRIPT=...     -  The script to upload (default: common/scripts/printargs.sh)
+REMOTE_ARGS=...       -  The arguments for the script (default: IP_ADDRESS)
+REMOTE_OUTPUT=...     -  The output file (default: .tmpoutput)
+REMOTE_SYNC=...       -  The sync time (default: 0)
+
+Example:
+
+sudo make faux_remote_test REMOTE_SERVERS="swarm1,swarm3" REMOTE_OUTPUT=results/test REMOTE_SYNC=2 REMOTE_ARGS="IP_ADDRESS UNIQUE_PORT" REMOTE_SCRIPT="udptest"
+
+This will do:
+common/scripts/faux.py nameserver netstack="eth5 1" webserver=". 4" runremote="swarm1,swarm3 udptest output=results/test sync=2 IP_ADDRESS UNIQUE_PORT"

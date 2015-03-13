@@ -1,0 +1,17 @@
+*~
+*.swp
+*.exe
+*.a
+*.o
+*.cmd
+Module.symvers
+*.mod.c
+*.ko
+modules.order
+build
+.config
+.config.old
+.kconfig.d
+.tmpconfig.h
+.gdbcmds
+.hareoutput

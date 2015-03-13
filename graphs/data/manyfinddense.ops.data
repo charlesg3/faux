@@ -1,0 +1,25 @@
+CREATE       222113
+DESTROY           0
+ADDMAP       222225
+RM_MAP       222112
+OPEN         224242
+READ              0
+WRITE             0
+LSEEK             0
+CLOSE        224241
+DUP               0
+FSTAT            16
+DIRENT        15560
+UNLINK       222000
+READLINK          0
+RENAME            0
+RMDIR           112
+TRUNC             0
+CHMOD             0
+CHOWN             0
+RESOLVE      227012
+UTIMENS           1
+SYMLINK           0
+BLOCKS            1
+FLUSH             0
+

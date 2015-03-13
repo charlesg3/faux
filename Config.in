@@ -1,0 +1,349 @@
+#
+# For a description of the syntax of this configuration file,
+# see scripts/kbuild/config-language.txt.
+#
+
+mainmenu "Hare Configuration"
+
+config HAVE_DOT_CONFIG
+    bool
+    default y
+
+menu "Hardware Configuration"
+
+config HARDWARE_KHZ
+    int "KHz - Speed of the processor we will be running on."
+    default 2000000
+    help
+      The speed of the processor we are running on. This is used
+      to determine real-time calculations from cycle counts.
+endmenu
+
+menu "Debug"
+
+menu "Server"
+config DBG_CHECK_QUEUES
+    bool "Check Queues: check to see if queues are empty."
+    default n
+comment "Operations:"
+config DBG_SERVER_ALL
+    bool "ALL: Print debug taces for ALL calls."
+    default n
+config DBG_SERVER_CREATE
+    bool "CREATE: Print debug traces for this type of call."
+    default n
+config DBG_SERVER_DESTROY
+    bool "DESTROY: Print debug traces for this type of call."
+    default n
+config DBG_SERVER_ADDMAP
+    bool "ADDMAP: Print debug traces for this type of call."
+    default n
+config DBG_SERVER_REMOVEMAP
+    bool "REMOVEMAP: Print debug traces for this type of call."
+    default n
+config DBG_SERVER_RESOLVE
+    bool "RESOLVE: Print debug traces for this type of call."
+    default n
+config DBG_SERVER_PIPE
+    bool "PIPE: Print debug traces for this type of call."
+    default n
+config DBG_SERVER_OPEN
+    bool "OPEN: Print debug traces for this type of call."
+    default n
+config DBG_SERVER_DUP    
+    bool "DUP: Print debug traces for this type of call."
+    default n
+config DBG_SERVER_CLOSE
+    bool "CLOSE: Print debug traces for this type of call."
+    default n
+config DBG_SERVER_UNLINK
+    bool "UNLINK: Print debug traces for this type of call."
+    default n
+config DBG_SERVER_RENAME
+    bool "RENAME: Print debug traces for this type of call."
+    default n
+config DBG_SERVER_SYMLINK
+    bool "SYMLINK: Print debug traces for this type of call."
+    default n
+config DBG_SERVER_RMDIR
+    bool "RMDIR: Print debug traces for this type of call."
+    default n
+config DBG_SERVER_READ
+    bool "READ: Print debug traces for this type of call."
+    default n
+config DBG_SERVER_WRITE
+    bool "WRITE: Print debug traces for this type of call."
+    default n
+config DBG_SERVER_FSTAT
+    bool "FSTAT: Print debug traces for this type of call."
+    default n
+config DBG_SERVER_CHMOD
+    bool "CHMOD: Print debug traces for this type of call."
+    default n
+config DBG_SERVER_FLUSH
+    bool "FLUSH: Print debug traces for this type of call."
+    default n
+config DBG_SERVER_DIRENTRY
+    bool "DIRENTRY: Print debug traces for this type of call."
+    default n
+
+
+menu "/stat file"
+config DBG_SHOW_OPS
+    bool "Show Ops: Include a summary of the operations."
+    default y
+config DBG_SHOW_FDS
+    bool "Show Fds: Include a list of open fds."
+    default n
+config DBG_SHOW_BUFFERCACHE
+    bool "Buffer Cache: Show the used / free information for the buffer cache."
+    default n
+config DBG_SHOW_ORPHANS
+    bool "Show Orphans: Display a list of orphaned files."
+    default n
+config DBG_SHOW_QUEUE_DELAY
+    bool "Show Queue Delay: calculate the queue delay for messages."
+    default n
+endmenu
+
+
+
+endmenu
+
+menu "Client"
+config DBG_CLIENT_BUFFER_CACHE_LOG
+    bool "Buffer Cache Log: Log all buffer cache accesses."
+    default n
+config DBG_CLIENT_OP_COUNTER
+    bool "OpCounter: Count operations at the client / library."
+    default n
+comment "Operations:"
+config DBG_CLIENT_ALL
+    bool "ALL: Print debug taces for ALL calls."
+    default n
+config DBG_CLIENT_DIR
+    bool "DIR: Print debug taces for all directory operations."
+    default n
+config DBG_CLIENT_RENAME
+    bool "RENAME: Print debug taces for all directory operations."
+    default n
+config DBG_CLIENT_CREATE
+    bool "CREATE: Print debug taces for this type of call."
+    default n
+config DBG_CLIENT_OPEN
+    bool "OPEN: Print debug taces for this type of call."
+    default n
+config DBG_CLIENT_MKDIR
+    bool "MKDIR: Print debug taces for this type of call."
+    default n
+config DBG_CLIENT_RMDIR
+    bool "RMDIR: Print debug taces for this type of call."
+    default n
+config DBG_CLIENT_UNLINK
+    bool "UNLINK: Print debug taces for this type of call."
+    default n
+config DBG_CLIENT_CHDIR
+    bool "CHDIR: Print debug taces for this type of call."
+    default n
+config DBG_CLIENT_CLOSE
+    bool "CLOSE: Print debug taces for this type of call."
+    default n
+config DBG_CLIENT_READ
+    bool "READ: Print debug taces for this type of call."
+    default n
+config DBG_CLIENT_WRITE
+    bool "WRITE: Print debug taces for this type of call."
+    default n
+config DBG_CLIENT_DUP
+    bool "DUP: Print debug taces for this type of call."
+    default n
+config DBG_CLIENT_FSTAT
+    bool "FSTAT: Print debug taces for this type of call."
+    default n
+config DBG_CLIENT_EXEC
+    bool "EXEC: Print debug taces for this type of call."
+    default n
+config DBG_CLIENT_CLONE
+    bool "CLONE: Print debug taces for this type of call."
+    default n
+config DBG_CLIENT_START
+    bool "START: Print debug taces for this type of call."
+    default n
+config DBG_CLIENT_EXIT
+    bool "EXIT: Print debug taces for this type of call."
+    default n
+endmenu
+
+endmenu
+
+menu "Messaging"
+config CHANNEL_BUF_SIZE
+    int "Channel Buffer Size"
+    default 65536
+    help
+        CHANNEL_BUF_SIZE: Size of the channel shared between two endpoints
+
+config CHANNEL_POOL_SIZE
+    int "Server Channel Pool Size"
+    default 256
+    help
+        CHANNEL_POOL_SIZE: Size of the pool of channels in a server endpoint.
+
+config CLIENT_CHANNEL_POOL_SIZE
+    int "Client Channel Pool Size"
+    default 8
+    help
+        CLIENT_CHANNEL_POOL_SIZE: Size of the pool of channels in a client
+        (response) endpoint.
+
+config MSG_YIELD
+    bool "Messaging Yield: Yield at certain points for time sharing."
+    default n
+
+config PCIDE
+    bool "PCIDE: Use PCIDE feature to avoid TLB misses."
+    default n
+
+endmenu
+
+menu "Client"
+
+choice
+    prompt "Scheduling Policy"
+    default SCHEDULING_NONE
+
+    config SCHEDULING_NONE
+        bool "None: No scheduling policy, let kernel decide."
+
+    config SCHEDULING_STRIPE
+        bool "Stripe: Put each subsequent process on the next core."
+
+    config SCHEDULING_NON_SERVER
+        bool "Non-Server: Processes may not run on server cores."
+
+    config SCHEDULING_CORE0
+        bool "Core0: All processes run on core 0."
+
+    config SCHEDULING_SOCKET0
+        bool "Socket0: All processes run on socket 0."
+
+    config SCHEDULING_SOCKET1
+        bool "Socket1: All processes run on socket 1."
+endchoice
+
+choice
+    prompt "Scheduling Decision"
+    default SCHEDULING_SEQUENTIAL
+
+config SCHEDULING_RAND
+    bool "Next spawn rand: Whether to random server for next exec()."
+
+config SCHEDULING_NONFS
+    bool "Next spawn nofs: Non FS Server for next exec()."
+
+config SCHEDULING_NONFS_SEQ
+    bool "Next spawn nofs_seq: Non FS Server (RR) for next exec()."
+
+config SCHEDULING_SEQUENTIAL
+    bool "Next spawn seq: Round Robin for next exec()."
+
+endchoice
+
+
+config SCHEDULER_RR
+    bool "Whether to use the round robin scheduler from underlying OS."
+    default y
+
+config NUMA_SCHEDULE
+    bool "NUMA Scheduling: Pin clients to socket of large files."
+    default n
+
+config REMOTE_EXEC
+    bool "Remote Exec: Whether to use servers for exec() calls."
+    default y
+
+config HARE_WAKE
+    bool "Hare Wake: Use syscall to wake sleeping server."
+    default y
+
+endmenu
+
+menu "Services"
+
+menu "Naming"
+
+config NAMESERVER_EP_ADDR
+    int "nameserver endpoint address"
+    default 0
+    help
+        Set the endpoint address of the nameserver. A fixed endpoint address
+        is required since processes must be able to create private channels
+        with the nameserver to register, lookup, and unregister addresses and
+        names.
+
+endmenu
+
+
+menu "Filesystem"
+config SERVER_COUNT
+    int "Number of servers."
+    default 1
+
+config FS_SERVER_COUNT
+    int "Number of filesystem servers."
+    default 1
+
+config DIRECTORY_DISTRIBUTION
+    bool "DIRECTORY_DISTRIBUTION: wether or not to distribute dir entries ."
+    default y
+
+config CREATION_AFFINITY
+    bool "CREATION_AFFINITY: wether we create files locally."
+    default n
+
+config MAX_FNAME_LEN
+    int "MAX_FNAME_LEN"
+    default 4096
+    help
+        The maximum length of a filename.
+
+config FS_CHUNK_SIZE
+    int "FS_CHUNK_SIZE"
+    default 32768
+    help
+        The size of chunks for communication with the server.
+
+config FD_COUNT
+    int "FD_COUNT"
+    default 256
+    help
+        The number of outstanding file descriptors a process may have.
+
+config BUFFER_CACHE
+    bool "Enable the Buffer Cache."
+    default n
+
+config DIRECTORY_CACHE
+    bool "Whether the lib should cache dir lookups"
+    default y
+
+config BUFFER_CACHE_SIZE
+    int "Buffer cache size (in MB)."
+    default 1024
+
+config BUFFER_CACHE_BLOCKSIZE
+    int "Buffer cache block size."
+    default 4096
+
+config RM_SCATTER_GATHER
+    bool  "Use scatter gather instead of sequential for rmdir()"
+    default y
+
+config DENT_SNAPSHOT
+    bool  "Create snapshot of dents when first readdir() is called."
+    default y
+
+endmenu
+
+endmenu
+
